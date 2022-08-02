@@ -25,8 +25,8 @@ check_fs_params_existing = [
 def test_fs_check_existing(root, rules_path, vendor, board, ide):
     results = afqp_check.check_fs(root, rules_path, vendor, board, ide)
     for result in results:
-        assert result.type == 'warning', '({}, {})'.format(result.type, result.info)
-        assert result.type != 'error', '({}, {})'.format(result.type, result.info)
+        assert result.type == 'warning', f'({result.type}, {result.info})'
+        assert result.type != 'error', f'({result.type}, {result.info})'
 
 
 check_fs_params_nonexisting = [
@@ -42,7 +42,7 @@ def test_fs_check_nonexisting(root, rules_path, vendor, board, ide):
     for result in results:
         if result.type == 'error':
             sum_errors += 1
-        if result.type == 'warning':
+        elif result.type == 'warning':
             sum_warnings += 1
     assert sum_errors == len(rules['error'])
     assert sum_warnings == len(rules['warning'])
@@ -60,7 +60,7 @@ check_platform_name_params = [
 @pytest.mark.parametrize('root, vendor, board', check_platform_name_params)
 def test_check_platform_name(root, vendor, board):
     results = afqp_check.check_platform_name(root, vendor, board)
-    assert len(list(filter(lambda r : r.type == 'error', results))) == 0
+    assert not list(filter(lambda r : r.type == 'error', results))
 
 
 def test_get_platform_name_error():
@@ -128,7 +128,7 @@ def test_get_license_match_error():
         license = afqp_check.get_license(f)
         result = afqp_check.get_license_match_error(license, f.name)
         assert result != []
-        assert result[0].type == 'warning', '({}, {})'.format(result.type, result.info)
+        assert result[0].type == 'warning', f'({result.type}, {result.info})'
 
 
 license_path = 'a/b/c/aws_ota_pal.c'
@@ -169,7 +169,7 @@ def test_get_copyright_errors(input_license, license_path, is_config, expected_n
     results = afqp_check.get_copyright_errors(input_license, license_path, is_config)
     assert len(results) == expected_num_errors
     for result in results:
-        assert result.type == 'error', '({}, {})'.format(result.type, result.info)
+        assert result.type == 'error', f'({result.type}, {result.info})'
 
 
 def test_get_line_number():
@@ -196,7 +196,7 @@ def test_get_eclipse_project_errors(test_file_path, expected_num_errors):
     results, dummy_set = afqp_check.get_eclipse_project_errors(test_file_path)
     assert len(results) == expected_num_errors
     for result in results:
-        assert result.type == 'error', '({}, {})'.format(result.type, result.info)
+        assert result.type == 'error', f'({result.type}, {result.info})'
 
 
 eclipse_check_params = [

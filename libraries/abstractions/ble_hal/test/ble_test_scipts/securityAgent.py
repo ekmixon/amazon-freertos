@@ -38,7 +38,7 @@ CAPABILITIES = "DisplayYesNo"
 def ask(prompt):
     try:
         test = raw_input(prompt)
-        print("just input" + test)
+        print(f"just input{test}")
         return test
     except BaseException:
         return input(prompt)
@@ -64,7 +64,7 @@ class Agent(dbus.service.Object):
         in_signature="os",
         out_signature="")
     def AuthorizeService(self, device, uuid):
-        print("AuthorizeService (%s, %s)" % (device, uuid))
+        print(f"AuthorizeService ({device}, {uuid})")
         sys.stdout.flush()
         authorize = ask("Authorize connection (yes/no): ")
         if (authorize == "yes"):
@@ -76,7 +76,7 @@ class Agent(dbus.service.Object):
         in_signature="o",
         out_signature="s")
     def RequestPinCode(self, device):
-        print("RequestPinCode (%s)" % (device))
+        print(f"RequestPinCode ({device})")
         sys.stdout.flush()
         set_trusted(device)
         return ask("Enter PIN Code: ")
@@ -86,7 +86,7 @@ class Agent(dbus.service.Object):
         in_signature="o",
         out_signature="u")
     def RequestPasskey(self, device):
-        print("RequestPasskey (%s)" % (device))
+        print(f"RequestPasskey ({device})")
         sys.stdout.flush()
         set_trusted(device)
         passkey = ask("Enter passkey: ")
@@ -107,7 +107,7 @@ class Agent(dbus.service.Object):
         in_signature="os",
         out_signature="")
     def DisplayPinCode(self, device, pincode):
-        print("DisplayPinCode (%s, %s)" % (device, pincode))
+        print(f"DisplayPinCode ({device}, {pincode})")
         sys.stdout.flush()
 
     @dbus.service.method(
@@ -122,7 +122,7 @@ class Agent(dbus.service.Object):
         in_signature="o",
         out_signature="")
     def RequestAuthorization(self, device):
-        print("RequestAuthorization (%s)" % (device))
+        print(f"RequestAuthorization ({device})")
         sys.stdout.flush()
         auth = ask("Authorize? (yes/no): ")
         if (auth == "yes"):
@@ -154,12 +154,10 @@ def createSecurityAgent(paramCapabilities="DisplayYesNo", agent=None):
             sys.stdout.flush()
             break
         except dbus.exceptions.DBusException as error:
-            print("Agent could not get started:" + str(error))
+            print(f"Agent could not get started:{str(error)}")
             print("Retrying after 1s")
             sys.stdout.flush()
             time.sleep(1)
-            pass
-
     return agent
 
 
@@ -170,5 +168,5 @@ def removeSecurityAgent():
         manager = dbus.Interface(obj, testutils.AGENT_MANAGER_INTERFACE)
         manager.UnregisterAgent(TEST_AGENT_PATH)
     except dbus.exceptions.DBusException as error:
-        print("Agent could not get started:" + str(error))
+        print(f"Agent could not get started:{str(error)}")
         sys.stdout.flush()

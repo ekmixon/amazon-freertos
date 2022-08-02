@@ -17,8 +17,7 @@ This function will populate toolchain version.
 def GettoolchainVersion(inVersionCommand):
 	import subprocess
 	p = subprocess.Popen(inVersionCommand.split(), stdout=subprocess.PIPE)
-	toolchainVersion = p.communicate()[0].rstrip()
-	return toolchainVersion
+	return p.communicate()[0].rstrip()
 
 """
 This function will return absolute path of toolchain.
@@ -27,7 +26,7 @@ If the path comes out to be empty then exit with error.
 def customWhich(command):
 	absCommand = which(command)
 	if absCommand == "":
-		Exit("Command: " + command + " does not exist")
+		Exit(f"Command: {command} does not exist")
 
 	return absCommand
 
@@ -53,7 +52,7 @@ def ARM_GCCCheck(inOpts):
 	"""
 	toolchainVersion = GettoolchainVersion(versionCommand).replace(".", "")
 
-	if ((lto_state == "n") or (lto_state == "")) and (toolchainVersion < "493"):
+	if lto_state in ["n", ""] and toolchainVersion < "493":
 		str = ["Please use 4.9.3 or higher version", toolchain]
 		Exit(" ".join(str))
 
@@ -73,7 +72,7 @@ def ArchNameCheck(inOpts):
 
 def ValueCheck(inValue, inValueName):
 	if inValue is None:
-		Exit("Please specify " + inValueName)
+		Exit(f"Please specify {inValueName}")
 
 def OptsCheck(inOpts):
 	ValueCheck(inOpts.toolchain, "toolchain")

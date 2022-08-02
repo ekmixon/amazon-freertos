@@ -23,11 +23,11 @@ def mark_hn_errors(source_file_name):
             not prefix_is_correct(line)
         ):
             err_count += 1
-            print(source_file_name + ":" + str(find_line(source_file_name, line)))
+            print(f"{source_file_name}:{str(find_line(source_file_name, line))}")
             truncation_length = 90
             if len(line) > truncation_length:
-                line = line[:truncation_length] + "..."
-            removed_line = "- " + line
+                line = f"{line[:truncation_length]}..."
+            removed_line = f"- {line}"
             print(removed_line)
             ident = get_identifier(line)
             fixed_ident = get_base_identifier(ident)
@@ -35,7 +35,7 @@ def mark_hn_errors(source_file_name):
             fixed_ident[0] = fixed_ident[0].upper()
             fixed_ident = ''.join(fixed_ident)
             fixed_ident = get_prefix(line) + fixed_ident
-            fixed_line = "+ " + line.replace(ident, fixed_ident)
+            fixed_line = f"+ {line.replace(ident, fixed_ident)}"
             print(fixed_line)
             print("")
     return err_count
@@ -43,9 +43,7 @@ def mark_hn_errors(source_file_name):
 
 def find_line(source_file_name, text):
     with open(source_file_name) as source_file:
-        line_num = 0
-        for line in source_file:
-            line_num += 1
+        for line_num, line in enumerate(source_file, start=1):
             if text in line:
                 return line_num
     return 0
@@ -88,11 +86,7 @@ def is_var_decl(line):
         return False
     if line.startswith("return"):
         return False
-    if line.startswith("case"):
-        return False
-    if line.startswith("typedef"):
-        return False
-    return True
+    return False if line.startswith("case") else not line.startswith("typedef")
 
 
 def get_left_hand_side(line):
@@ -141,11 +135,7 @@ def prefix_is_correct(line):
         return True
     correct_base_prefix = re.sub("^p+", "", correct_prefix)
     current_base_prefix = re.sub("^p+", "", current_prefix)
-    if correct_base_prefix == 'x' and current_base_prefix == 'e':
-        # Need to parse typedefs in order to correctly identify enums.
-        # So for now we just assume it's correct
-        return True
-    return False
+    return correct_base_prefix == 'x' and current_base_prefix == 'e'
 
 
 def is_globally_linked(line):
@@ -153,12 +143,7 @@ def is_globally_linked(line):
         return True
     if "static" in line:
         return False
-    if line.startswith(" ") or line.startswith("\t"):
-        # If the line starts with a space and is not part of a function, it will
-        # fail the style check.  So, if the line starts with a space it is part
-        # of a function.
-        return False
-    return True
+    return not line.startswith(" ") and not line.startswith("\t")
 
 
 def get_identifier(line):
@@ -166,8 +151,7 @@ def get_identifier(line):
     line = get_left_hand_side(line)
     line = strip_qualifiers(line)
     line = strip_pointers(line)
-    identifier = re.findall(r"\b\w+\b", line)[1]
-    return identifier
+    return re.findall(r"\b\w+\b", line)[1]
 
 
 def get_prefix(line):
@@ -179,8 +163,7 @@ def get_prefix(line):
     line = strip_pointers(line)
     base_type = get_base_type(line)
     base_prefix = get_base_prefix(base_type)
-    prefix = "p" * indirection + "u" * unsigned + base_prefix
-    return prefix
+    return "p" * indirection + "u" * unsigned + base_prefix
 
 # PKCS #11 types may have the format
 # CK_TYPE_PTR or CK_TYPE_PTR_PTR
@@ -233,16 +216,19 @@ def get_base_prefix(type_name):
 def get_identifier_prefix(identifier):
     direct_identifier = re.sub(r"^p+", "", identifier)
     indirection = "p" * (len(identifier) - len(direct_identifier))
-    for prefix in TYPE_PREFIXES.values():
-        if re.match(r"^" + prefix + r"[0-9,A-Z]", direct_identifier):
-            return indirection + prefix
-    return ''
+    return next(
+        (
+            indirection + prefix
+            for prefix in TYPE_PREFIXES.values()
+            if re.match(f"^{prefix}[0-9,A-Z]", direct_identifier)
+        ),
+        '',
+    )
 
 
 def get_base_identifier(identifier):
     prefix = get_identifier_prefix(identifier)
-    base_identifier = re.sub(r"^" + prefix, "", identifier)
-    return base_identifier
+    return re.sub(f"^{prefix}", "", identifier)
 
 
 def main():  # pragma: no cover

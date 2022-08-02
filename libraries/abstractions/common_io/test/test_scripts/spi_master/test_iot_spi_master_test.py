@@ -37,8 +37,8 @@ import re
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(scriptdir)
 if parentdir not in sys.path:
-    print("Script Dir: %s" % scriptdir)
-    print("Parent Dir: %s" % parentdir)
+    print(f"Script Dir: {scriptdir}")
+    print(f"Parent Dir: {parentdir}")
     sys.path.append(parentdir)
 from test_iot_test_template import test_template
 
@@ -69,7 +69,7 @@ class pyboard_spi:
         :return:
         """
         self._serial.write('spi = SPI(2, SPI.SLAVE, baudrate=500000, polarity=0, phase=0)\r\n'.encode('utf-8'))
-        self._serial.write('data=bytearray({})\r\n'.format(data).encode('utf-8'))
+        self._serial.write(f'data=bytearray({data})\r\n'.encode('utf-8'))
         self._serial.write('spi.send(data, timeout=50000)\r\n'.encode('utf-8'))
         sleep(1)
 
@@ -80,7 +80,7 @@ class pyboard_spi:
         :return:
         """
         self._serial.write('spi = SPI(2, SPI.SLAVE, baudrate=500000, polarity=0, phase=0)\r\n'.encode('utf-8'))
-        self._serial.write('data=bytearray({})\r\n'.format(data).encode('utf-8'))
+        self._serial.write(f'data=bytearray({data})\r\n'.encode('utf-8'))
         self._serial.write('list(spi.send_recv(data, timeout=50000))\r\n'.encode('utf-8'))
         sleep(1)
 
@@ -154,11 +154,14 @@ class TestSPIMasterAssisted(test_template):
 
         self._pyb.deinit()
 
-        w_bytes = []
-        for x in re.sub('\r', '',dut_res).split('\n'):
-            if x.find('IGNORE') != -1:
-                w_bytes = [int(s, 16) for s in x.split(',') if len(s) == 2]
-                break
+        w_bytes = next(
+            (
+                [int(s, 16) for s in x.split(',') if len(s) == 2]
+                for x in re.sub('\r', '', dut_res).split('\n')
+                if x.find('IGNORE') != -1
+            ),
+            [],
+        )
 
         if 'r_bytes' not in locals() or not isinstance(r_bytes, list):
             print("No data is received by spi slave.\n", pyb_res)
@@ -183,7 +186,7 @@ class TestSPIMasterAssisted(test_template):
         :param cmd: iot test cmd
         :return:
         """
-        w_bytes = [random.randrange(0, 128) for i in range(0, 16)]
+        w_bytes = [random.randrange(0, 128) for _ in range(16)]
         self._pyb.send(w_bytes)
         self._serial.reset_input_buffer()
         self._serial.write('\r\n'.encode('utf-8'))
@@ -193,11 +196,14 @@ class TestSPIMasterAssisted(test_template):
         res = self._serial.read_until(terminator=serial.to_bytes([ord(c) for c in 'Ignored '])).decode('utf-8')
         self._pyb.deinit()
 
-        r_bytes = []
-        for x in re.sub('\r', '', res).split('\n'):
-            if x.find('IGNORE') != -1:
-                r_bytes = [int(s, 16) for s in x.split(',') if len(s) == 2]
-                break
+        r_bytes = next(
+            (
+                [int(s, 16) for s in x.split(',') if len(s) == 2]
+                for x in re.sub('\r', '', res).split('\n')
+                if x.find('IGNORE') != -1
+            ),
+            [],
+        )
 
         if self.compare_host_dut_result(w_bytes, r_bytes) == -1:
             print(repr(res))
@@ -217,7 +223,7 @@ class TestSPIMasterAssisted(test_template):
         :param cmd: iot test cmd
         :return:
         """
-        pyb_wbytes = [random.randrange(0, 128) for i in range(0, 8)]
+        pyb_wbytes = [random.randrange(0, 128) for _ in range(8)]
         self._pyb.send_recv(pyb_wbytes)
         self._serial.reset_input_buffer()
         self._serial.write('\r\n'.encode('utf-8'))
@@ -237,28 +243,37 @@ class TestSPIMasterAssisted(test_template):
             except:
                 pass
 
-        dut_wbytes = []
-        for x in re.sub('\r', '',dut_res).split('\n'):
-            if x.find('IGNORE') != -1:
-                dut_wbytes = [int(s, 16) for s in x.split(',') if len(s) == 2]
-                break
+        dut_wbytes = next(
+            (
+                [int(s, 16) for s in x.split(',') if len(s) == 2]
+                for x in re.sub('\r', '', dut_res).split('\n')
+                if x.find('IGNORE') != -1
+            ),
+            [],
+        )
 
         dut_rbytes = dut_wbytes[len(dut_wbytes) // 2:]
         dut_wbytes = dut_wbytes[:len(dut_wbytes) // 2]
 
         if 'pyb_rbytes' not in locals() or not isinstance(pyb_rbytes, list):
-            print("No data is received by spi slave.\n{}\n{}".format(repr(pyb_res), repr(dut_res)))
+            print(f"No data is received by spi slave.\n{repr(pyb_res)}\n{repr(dut_res)}")
             self._pyb.kill()
             return "Fail"
 
         # Compare bytes dut write and pyb read.
         if self.compare_host_dut_result(dut_wbytes, pyb_rbytes) == -1:
-            print("dut_wbytes:{}\npyb_rbytes:{}\n{}\n{}".format(dut_wbytes, pyb_rbytes, pyb_res, dut_res))
+            print(
+                f"dut_wbytes:{dut_wbytes}\npyb_rbytes:{pyb_rbytes}\n{pyb_res}\n{dut_res}"
+            )
+
             return "Fail"
 
         # Compare bytes dut read and pyb write.
         if self.compare_host_dut_result(pyb_wbytes, dut_rbytes) == -1:
-            print("pyb_wbytes:{}\ndut_rbytes:{}\n{}\n{}".format(pyb_wbytes, dut_rbytes, pyb_res, dut_res))
+            print(
+                f"pyb_wbytes:{pyb_wbytes}\ndut_rbytes:{dut_rbytes}\n{pyb_res}\n{dut_res}"
+            )
+
             return "Fail"
 
         return "Pass"
@@ -291,7 +306,7 @@ if __name__ == "__main__":
     rpi_login = args.login_name[0]
     rpi_pwd = args.password[0]
 
-    with open(scriptdir+'/test_result.csv', 'w', newline='') as csvfile:
+    with open(f'{scriptdir}/test_result.csv', 'w', newline='') as csvfile:
         field_name = ['test name', 'test result']
         writer = csv.DictWriter(csvfile, fieldnames=field_name)
         writer.writeheader()

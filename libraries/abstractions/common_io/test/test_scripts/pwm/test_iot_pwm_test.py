@@ -37,8 +37,8 @@ import re
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(scriptdir)
 if parentdir not in sys.path:
-    print("Script Dir: %s" % scriptdir)
-    print("Parent Dir: %s" % parentdir)
+    print(f"Script Dir: {scriptdir}")
+    print(f"Parent Dir: {parentdir}")
     sys.path.append(parentdir)
 from test_iot_test_template import test_template
 import socket
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     rpi_login = args.login_name[0]
     rpi_pwd = args.password[0]
 
-    with open(scriptdir + '/test_result.csv', 'w', newline='') as csvfile:
+    with open(f'{scriptdir}/test_result.csv', 'w', newline='') as csvfile:
         field_name = ['test name', 'test result']
         writer = csv.DictWriter(csvfile, fieldnames=field_name)
         writer.writeheader()

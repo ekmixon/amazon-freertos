@@ -115,9 +115,7 @@ class runTest:
     @staticmethod
     def discoveryStoppedCb(testDevice=None):
         global testResult
-        testResult = False
-        if testDevice is None:
-            testResult = True
+        testResult = testDevice is None
         runTest.mainloop.quit()
 
     @staticmethod
@@ -126,33 +124,29 @@ class runTest:
 
     @staticmethod
     def discoveryEventCb(testDevice):
-        isTestSuccessFull = runTest.advertisement(testDevice)
-
-        if isTestSuccessFull:
+        if isTestSuccessFull := runTest.advertisement(testDevice):
             runTest.setTestDevice(testDevice)
             # discoveryEvent.set()
             runTest.mainloop.quit()
 
     @staticmethod
     def discoveryEventCb_16bit(testDevice):
-        isTestSuccessFull = runTest.advertisement_16bit(testDevice)
-
-        if isTestSuccessFull:
+        if isTestSuccessFull := runTest.advertisement_16bit(testDevice):
             runTest.setTestDevice(testDevice)
             # discoveryEvent.set()
             runTest.mainloop.quit()
 
     @staticmethod
     def notificationCb(uuid, value, flag):
-        isNotificationTestSuccessFull = runTest.notification(uuid, value, flag)
-        if isNotificationTestSuccessFull:
+        if isNotificationTestSuccessFull := runTest.notification(
+            uuid, value, flag
+        ):
             # notificationEvent.set()
             runTest.mainloop.quit()
 
     @staticmethod
     def indicationCb(uuid, value, flag):
-        isIndicationTestSuccessFull = runTest.indication(uuid, value, flag)
-        if isIndicationTestSuccessFull:
+        if isIndicationTestSuccessFull := runTest.indication(uuid, value, flag):
             # indicationEvent.set()
             runTest.mainloop.quit()
 
@@ -236,24 +230,17 @@ class runTest:
     @staticmethod
     def pairing():
         isTestSuccessFull = True
-        if bleAdapter.isPaired() == False:
-            bleAdapter.writeCharacteristic(
-                runTest.DUT_ENCRYPT_CHAR_UUID,
-                runTest.DUT_ENCRYPT_CHAR_UUID)  # should trigger a pairing event
-            isTestSuccessFull = bleAdapter.isPaired(
-                timeout=runTest.GENERIC_TEST_TIMEOUT)
-        else:
-            isTestSuccessFull = False
-        return isTestSuccessFull
+        if bleAdapter.isPaired() != False:
+            return False
+        bleAdapter.writeCharacteristic(
+            runTest.DUT_ENCRYPT_CHAR_UUID,
+            runTest.DUT_ENCRYPT_CHAR_UUID)  # should trigger a pairing event
+        return bleAdapter.isPaired(timeout=runTest.GENERIC_TEST_TIMEOUT)
 
     @staticmethod
     def _readWriteProtectedAttributes(pairingStatus):
 
-        if pairingStatus:
-            expectedSuccess = True
-        else:
-            expectedSuccess = False
-
+        expectedSuccess = bool(pairingStatus)
         isTestSuccessfull = bleAdapter.writeDescriptor(
             runTest.DUT_ENCRYPT_DESCR_UUID, runTest.DUT_ENCRYPT_DESCR_UUID)
         if isTestSuccessfull != expectedSuccess:
@@ -294,8 +281,7 @@ class runTest:
     # Expect writing/Reading to protect attribute to fail.
     @staticmethod
     def readWriteProtectedAttributesWhileNotPaired():
-        isPaired = bleAdapter.isPaired()
-        if isPaired:
+        if isPaired := bleAdapter.isPaired():
             print(
                 "readWriteProtectedCharacteristicWhileNotPaired test: Expected paired:0, got:" +
                 str(isPaired))
@@ -306,21 +292,19 @@ class runTest:
 
     @staticmethod
     def indication(uuid, value, flag):
-        isSuccessfull = False
-        if (uuid == runTest.DUT_INDICATE_CHAR_UUID) and (
-                value == runTest.DUT_GENERIC_STRING) and (flag == "indicate"):
-            isSuccessfull = True
-
-        return isSuccessfull
+        return (
+            uuid == runTest.DUT_INDICATE_CHAR_UUID
+            and value == runTest.DUT_GENERIC_STRING
+            and flag == "indicate"
+        )
 
     @staticmethod
     def notification(uuid, value, flag):
-        isSuccessfull = False
-        if (uuid == runTest.DUT_NOTIFY_CHAR_UUID) and (
-                value == runTest.DUT_GENERIC_STRING) and (flag == "notify"):
-            isSuccessfull = True
-
-        return isSuccessfull
+        return (
+            uuid == runTest.DUT_NOTIFY_CHAR_UUID
+            and value == runTest.DUT_GENERIC_STRING
+            and flag == "notify"
+        )
 
     @staticmethod
     def notificationMTU2(uuid, value, flag):
@@ -329,21 +313,19 @@ class runTest:
 
     @staticmethod
     def notificationOnCharE(uuid, value, flag):
-        isSuccessfull = False
-        if (uuid == runTest.DUT_NOTIFY_CHAR_UUID) and (
-                value == runTest.DUT_CHAR_E_STRING) and (flag == "notify"):
-            isSuccessfull = True
-
-        return isSuccessfull
+        return (
+            uuid == runTest.DUT_NOTIFY_CHAR_UUID
+            and value == runTest.DUT_CHAR_E_STRING
+            and flag == "notify"
+        )
 
     @staticmethod
     def indicationOnCharF(uuid, value, flag):
-        isSuccessfull = False
-        if (uuid == runTest.DUT_INDICATE_CHAR_UUID) and (
-                value == runTest.DUT_CHAR_F_STRING) and (flag == "indicate"):
-            isSuccessfull = True
-
-        return isSuccessfull
+        return (
+            uuid == runTest.DUT_INDICATE_CHAR_UUID
+            and value == runTest.DUT_CHAR_F_STRING
+            and flag == "indicate"
+        )
 
     @staticmethod
     def writeWithoutResponse():
@@ -408,9 +390,7 @@ class runTest:
         isTestSuccessfull = runTest._readWriteChecks(
             runTest.DUT_OPEN_CHAR_UUID, runTest.DUT_OPEN_DESCR_UUID)
 
-        isPaired = bleAdapter.isPaired()
-
-        if isPaired:
+        if isPaired := bleAdapter.isPaired():
             isTestSuccessfull = False
             print(
                 "readWriteSimpleConnection test: Expected paired:0, got:" +
@@ -470,13 +450,13 @@ class runTest:
         # Check characteristics UUIDs
         for uuid in runTest.DUT_CHAR.keys():
             if uuid not in gatt.characteristics.keys():
-                print("checkUUIDs test: missing characteristic UUID: " + uuid)
+                print(f"checkUUIDs test: missing characteristic UUID: {uuid}")
                 isTestSuccessfull = False
 
         # Check descriptors
         for uuid in runTest.DUT_DESCR.keys():
             if uuid not in gatt.descriptors.keys():
-                print("checkUUIDs test: missing descriptors UUID: " + uuid)
+                print(f"checkUUIDs test: missing descriptors UUID: {uuid}")
                 isTestSuccessfull = False
 
         sys.stdout.flush()
@@ -527,7 +507,7 @@ class runTest:
             #   return False
 
         name = bleAdapter.getPropertie(testDevice, "Name")
-        if(name is None):
+        if (name is None):
             print("Advertisement test: Waiting name")
             sys.stdout.flush()
             return False
@@ -535,9 +515,9 @@ class runTest:
             # Names can be cached. So the complete local name may still be in
             # memory. Check the 4 first letter which constitutes the short name
             if (runTest.DUT_NAME != name[:runTest.SHORT_LOCAL_NAME_SIZE]):
-                print("Advertisement test: name is incorrect: " + name)
+                print(f"Advertisement test: name is incorrect: {name}")
                 sys.stdout.flush()
-                # return False
+                        # return False
 
         if (bleAdapter.getPropertie(testDevice, "TxPower") is None):
             print("Advertisement test: Waiting for TxPower")
@@ -556,40 +536,34 @@ class runTest:
         manufacture_data_dict = bleAdapter.getPropertie(
             testDevice, "ManufacturerData")
 
-        # If manufacture data doesn't exist, return None
-        if(manufacture_data_dict is None):
+        if (manufacture_data_dict is None):
             return None
 
-        # If manufacture data exists, return manufacture data
-        else:
-            print("Manufacturer Specific Data: " +
-                  str(manufacture_data_dict.items()))
-            sys.stdout.flush()
-            if manufacture_data_dict.get(runTest.COMPANY_ID) != None:
-                manufacture_data = manufacture_data_dict[runTest.COMPANY_ID]
-                return manufacture_data
-            else:
-                return None
+        print("Manufacturer Specific Data: " +
+              str(manufacture_data_dict.items()))
+        sys.stdout.flush()
+        return (
+            manufacture_data_dict[runTest.COMPANY_ID]
+            if manufacture_data_dict.get(runTest.COMPANY_ID) != None
+            else None
+        )
 
     @staticmethod
     def get_service_data(testDevice, DUT_UUID=None):
         service_data_dict = bleAdapter.getPropertie(
             testDevice, "ServiceData")
 
-        # If service data doesn't exist, return None
-        if(service_data_dict is None):
+        if (service_data_dict is None):
             return None
 
-        # If service data exists, return service data
-        else:
-            print("Service Data: " +
-                  str(service_data_dict.items()))
-            sys.stdout.flush()
-            if service_data_dict.get(runTest.SERV_UUID) != None:
-                service_data = service_data_dict[runTest.SERV_UUID]
-                return service_data
-            else:
-                return None
+        print("Service Data: " +
+              str(service_data_dict.items()))
+        sys.stdout.flush()
+        return (
+            service_data_dict[runTest.SERV_UUID]
+            if service_data_dict.get(runTest.SERV_UUID) != None
+            else None
+        )
 
     @staticmethod
     def _advertisement_start(scan_filter, UUID, discoveryEvent_Cb, bleAdapter):
@@ -650,20 +624,20 @@ class runTest:
             bleAdapter=bleAdapter)
         manufacture_data = runTest.get_manufacture_data(runTest.testDevice)
 
-        if bEnableManufactureData == False:
-            if manufacture_data is not None:
-                print("ERROR: MANU_DATA is not None")
-                isTestSuccessFull &= False
-        else:
-            if manufacture_data is None:
-                print("ERROR: MANU_DATA is not None")
-                isTestSuccessFull &= False
-            else:
-                for data in manufacture_data:
-                    if data != runTest.MANU_DATA:
-                        print( "MANU_DATA is not correct. Data received: %d" %data)
-                        isTestSuccessFull &= False
-        
+        if (
+            bEnableManufactureData == False
+            and manufacture_data is not None
+            or bEnableManufactureData != False
+            and manufacture_data is None
+        ):
+            print("ERROR: MANU_DATA is not None")
+            isTestSuccessFull &= False
+        elif bEnableManufactureData != False:
+            for data in manufacture_data:
+                if data != runTest.MANU_DATA:
+                    print( "MANU_DATA is not correct. Data received: %d" %data)
+                    isTestSuccessFull &= False
+
         runTest._simple_connect()
         runTest.stopAdvertisement(scan_filter)
         isTestSuccessFull &= bleAdapter.disconnect()
@@ -688,16 +662,15 @@ class runTest:
             if service_data is not None:
                 print("ERROR: SERV_DATA is not None")
                 isTestSuccessFull &= False
+        elif service_data is None:
+            print("ERROR: SERV_DATA is None")
+            isTestSuccessFull &= False
         else:
-            if service_data is None:
-                print("ERROR: SERV_DATA is None")
-                isTestSuccessFull &= False
-            else:
-                for data in service_data:
-                    if data != runTest.SERV_DATA:
-                        print( "SERV_DATA is not correct. Data received: %d" %data)
-                        isTestSuccessFull &= False
-        
+            for data in service_data:
+                if data != runTest.SERV_DATA:
+                    print( "SERV_DATA is not correct. Data received: %d" %data)
+                    isTestSuccessFull &= False
+
         runTest._simple_connect()
         runTest.stopAdvertisement(scan_filter)
         isTestSuccessFull &= bleAdapter.disconnect()
@@ -835,11 +808,12 @@ class runTest:
         isTestSuccessFull_disconnect = bleAdapter.disconnect()
         testutils.removeBondedDevices()
 
-        isTestSuccessFull = (isTestSuccessFull_discover &
-                             isTestSuccessFull_notification &
-                             isTestSuccessFull_removenotification &
-                             isTestSuccessFull_disconnect)
-        return isTestSuccessFull
+        return (
+            isTestSuccessFull_discover
+            & isTestSuccessFull_notification
+            & isTestSuccessFull_removenotification
+            & isTestSuccessFull_disconnect
+        )
 
     @staticmethod
     def Send_Data_After_Disconnected(scan_filter,
@@ -997,7 +971,7 @@ class runTest:
 
     @staticmethod
     def UUID_16to128(UUID_16bit):
-        return "0000" + UUID_16bit + "-0000-1000-8000-00805f9b34fb"
+        return f"0000{UUID_16bit}-0000-1000-8000-00805f9b34fb"
 
     @staticmethod
     def setTestDevice(testDeviceTmp):
@@ -1031,6 +1005,14 @@ class runTest:
     @staticmethod
     def printTestsSummary():
         print("-----------------------")
-        print(str(runTest.numberOfTests) + " Tests " +
-              str(runTest.numberOfFailedTests) + " Failures 0 Ignored")
+        print(
+            (
+                (
+                    f"{str(runTest.numberOfTests)} Tests "
+                    + str(runTest.numberOfFailedTests)
+                )
+                + " Failures 0 Ignored"
+            )
+        )
+
         sys.stdout.flush()

@@ -20,8 +20,8 @@ class SecBootError(Exception):
 
 # We define which as it may not be available on Windows
 def which(program):
-    if _platform == "win32" or _platform == "win64" or _platform == "cygwin":
-        program = program + '.exe'
+    if _platform in ["win32", "win64", "cygwin"]:
+        program = f'{program}.exe'
 
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -40,23 +40,25 @@ def which(program):
 
 def get_secureboot():
     global SECUREBOOT
-    if _platform == "linux" or _platform == "linux2":
-        SECUREBOOT = which(SCRIPT_DIR + "/Linux/secureboot")
+    if _platform in ["linux", "linux2"]:
+        SECUREBOOT = which(f"{SCRIPT_DIR}/Linux/secureboot")
     elif _platform == "darwin":
-        SECUREBOOT = which(SCRIPT_DIR + "/Darwin/secureboot")
-    elif _platform == "win32" or _platform == "win64" or _platform == "cygwin":
-        SECUREBOOT = which(SCRIPT_DIR + "/Windows/secureboot")
+        SECUREBOOT = which(f"{SCRIPT_DIR}/Darwin/secureboot")
+    elif _platform in ["win32", "win64", "cygwin"]:
+        SECUREBOOT = which(f"{SCRIPT_DIR}/Windows/secureboot")
     if not len(SECUREBOOT):
         raise SecBootError("Error: secureboot is not available for your platform")
 
 def file_path(file_name):
-    if _platform == "win32" or _platform == "win64":
-        if len(which("cygpath")):
-            return subprocess.Popen(['cygpath', '-m', file_name], stdout = subprocess.PIPE).communicate()[0].strip()
-        else:
-            return file_name.replace('\\', '/')
-    elif _platform == "cygwin":
+    if (
+        _platform in ["win32", "win64"]
+        and len(which("cygpath"))
+        or _platform not in ["win32", "win64"]
+        and _platform == "cygwin"
+    ):
         return subprocess.Popen(['cygpath', '-m', file_name], stdout = subprocess.PIPE).communicate()[0].strip()
+    elif _platform in ["win32", "win64"] and not len(which("cygpath")):
+        return file_name.replace('\\', '/')
     else:
         return file_name
 
@@ -115,14 +117,15 @@ def parse_keystore_hdr(kshdr):
     for line in lines:
         # Remove comments first
         parsed_line = ''
-        if multi_line_comm is False:
-            if '/*' in line:
+        if '/*' in line:
+            if multi_line_comm is False:
                 multi_line_comm = True
                 parsed_line = line[:line.find('/*')]
-            elif '//' in line:
+        elif '//' in line:
+            if multi_line_comm is False:
                 parsed_line = line[:line.find('//')]
-            else:
-                parsed_line = line
+        elif multi_line_comm is False:
+            parsed_line = line
         if multi_line_comm is True and '*/' in line:
             multi_line_comm = False
             parsed_line += line[line.find('*/') + 2:]
@@ -164,10 +167,7 @@ def parse_keystore_hdr(kshdr):
                 enum_dict[pair.split('=')[0]] = val
                 enum_list.append(pair.split('=')[0])
             else:
-                if not enum_list:
-                    val = '0'
-                else:
-                    val = str(int(enum_dict[enum_list[-1]]) + 1)
+                val = str(int(enum_dict[enum_list[-1]]) + 1) if enum_list else '0'
                 enum_dict[pair] = val
                 enum_list.append(pair)
 
@@ -196,7 +196,7 @@ def parse_sec_conf(sec_conf_file):
     except Exception as e:
         raise SecBootError(e)
     try:
-        with tempfile.NamedTemporaryFile('w', prefix=os.path.basename(sec_conf_file) + '.', delete=False) as pfile:
+        with tempfile.NamedTemporaryFile('w', prefix=f'{os.path.basename(sec_conf_file)}.', delete=False) as pfile:
             for line in lines:
                 for e in enum_dict:
                     line = line.replace(e, enum_dict[e])

@@ -43,21 +43,16 @@ class test_template(ABC):
     rpi_output_file = ''
 
     def print_result(self, testcase, result, extra = None):
-        if extra == None:
-            extra = "%s %sed" % (testcase, result)
-        print("%s [INFO] %s 0  %s  :  %s" % (str(datetime.now()), testcase, result.upper(), extra))
+        if extra is None:
+            extra = f"{testcase} {result}ed"
+        print(
+            f"{str(datetime.now())} [INFO] {testcase} 0  {result.upper()}  :  {extra}"
+        )
+
         self._cr.writerow({'test name': testcase, 'test result': result})
     def auto_run(self):
-        # print('hardware ready? (y/n)')
-        # string = str(input())
-        string = 'y'
-
-        if string == 'y':
-            skip_test = False
-        else:
-            skip_test = True
-
-        if skip_test == True:
+        skip_test = False
+        if skip_test:
             for f in self._func_list:
                 self.print_result(f.__name__, "Skip")
         else:

@@ -35,8 +35,8 @@ import threading
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(scriptdir)
 if parentdir not in sys.path:
-    print("Script Dir: %s" % scriptdir)
-    print("Parent Dir: %s" % parentdir)
+    print(f"Script Dir: {scriptdir}")
+    print(f"Parent Dir: {parentdir}")
     sys.path.append(parentdir)
 from test_iot_test_template import test_template
 

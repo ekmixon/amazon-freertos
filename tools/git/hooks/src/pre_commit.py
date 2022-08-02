@@ -15,22 +15,17 @@ def main(): # pragma: no cover
         files_to_check = filter_checkable_files(file_names)
         check_uncrustify(files_to_check, uncrustify=True)
     elif args['uncrustify']:
-        file_names = args['files']
-        if not file_names:
-            file_names = get_modified_files()
-
+        file_names = args['files'] or get_modified_files()
         files_to_check = filter_checkable_files(file_names)
         check_uncrustify(files_to_check, uncrustify=True)
-    else:
-        failed_files = commit_is_ready(args['files'])
-        if failed_files:
-            print("\nYou may run the following command to repeat the check: python tools/git/hooks/src/pre_commit.py")
-            print("\nYou may run the following command to uncrustify staged files: python tools/git/hooks/src/pre_commit.py --uncrustify")
-            print("\nYou may run the following command to uncrustify a list of files: python tools/git/hooks/src/pre_commit.py --uncrustify <files>")
-            print("\nYou may run the following command to uncrustify all files: python tools/git/hooks/src/pre_commit.py --uncrustify-all-files")
-            print("Hint: You may need to be at the repository's root directory.")
-            print('Aborting Commit.')
-            sys.exit(1)
+    elif failed_files := commit_is_ready(args['files']):
+        print("\nYou may run the following command to repeat the check: python tools/git/hooks/src/pre_commit.py")
+        print("\nYou may run the following command to uncrustify staged files: python tools/git/hooks/src/pre_commit.py --uncrustify")
+        print("\nYou may run the following command to uncrustify a list of files: python tools/git/hooks/src/pre_commit.py --uncrustify <files>")
+        print("\nYou may run the following command to uncrustify all files: python tools/git/hooks/src/pre_commit.py --uncrustify-all-files")
+        print("Hint: You may need to be at the repository's root directory.")
+        print('Aborting Commit.')
+        sys.exit(1)
     sys.exit(0)
 
 
@@ -63,22 +58,19 @@ def commit_is_ready(file_names=None):
     # files are ignored as defined in is_ignored_file_pattern.
     if files_to_check:
         for check in checks:
-            failed_files = check(files_to_check)
-            if failed_files:
+            if failed_files := check(files_to_check):
                 return failed_files
     return []
 
 
 def filter_checkable_files(file_names):
-    files_to_check = [f for f in file_names if file_exists(f) and file_is_checkable(f)]
-    return files_to_check
+    return [f for f in file_names if file_exists(f) and file_is_checkable(f)]
 
 
 def get_all_files():
     file_names = []
     for root, dirs, files in os.walk("."):
-        for f in files:
-            file_names.append(os.path.join(root, f))
+        file_names.extend(os.path.join(root, f) for f in files)
     return file_names
 
 
@@ -87,8 +79,7 @@ def get_modified_files():
         "git diff-index --name-only --cached HEAD", shell=True)
     if type(changed_files) is not str:
         changed_files = changed_files.decode('utf-8')
-    file_names = changed_files.split('\n')
-    return file_names
+    return changed_files.split('\n')
 
 
 def file_is_checkable(file_name):
@@ -104,9 +95,7 @@ def file_exists(file_name):
 
 
 def is_source_file(file_name):
-    if re.findall(r'\.[ch]$', file_name):
-        return True
-    return False
+    return bool(re.findall(r'\.[ch]$', file_name))
 
 
 def is_checked_file_pattern(file_name):
@@ -115,10 +104,10 @@ def is_checked_file_pattern(file_name):
         r"libraries/",
         r"tests/",
     ]
-    for checked_pattern in checked_patterns:
-        if re.findall(checked_pattern, file_name):
-            return True
-    return False
+    return any(
+        re.findall(checked_pattern, file_name)
+        for checked_pattern in checked_patterns
+    )
 
 
 def is_ignored_file_pattern(file_name):
@@ -130,10 +119,10 @@ def is_ignored_file_pattern(file_name):
         "libraries/3rdparty",
         "libraries/freertos_plus/standard/freertos_plus_tcp",
     ]
-    for ignored_pattern in ignored_patterns:
-        if re.findall(ignored_pattern, file_name):
-            return True
-    return False
+    return any(
+        re.findall(ignored_pattern, file_name)
+        for ignored_pattern in ignored_patterns
+    )
 
 
 def check_secrets(changed_files):
@@ -153,31 +142,31 @@ def check_whitespace(changed_files):
 
 def check_hungarian_notation(changed_files):
     """Return True if check failed.  Return False if check passed"""
-    failed_files = []
-    for changed_file in changed_files:
+    return [
+        changed_file
+        for changed_file in changed_files
         if subprocess.call(
             (
-                "python tools/checks/style/hn_check/src/hn_check.py " +
-                changed_file
-            ), shell=True
-        ):
-            failed_files.append(changed_file)
-    return failed_files
+                "python tools/checks/style/hn_check/src/hn_check.py "
+                + changed_file
+            ),
+            shell=True,
+        )
+    ]
 
 
 def check_uncrustify(changed_files, uncrustify=False):
     """Return True if check failed.  Return False if check passed"""
-    if "" == changed_files:
+    if changed_files == "":
         return False
-    failed_files = []
-    for changed_file in changed_files:
+    failed_files = [
+        changed_file
+        for changed_file in changed_files
         if subprocess.call(
-            (
-                "uncrustify --check -q -c tools/uncrustify.cfg " +
-                changed_file
-            ), shell=True
-        ):
-            failed_files.append(changed_file)
+            ("uncrustify --check -q -c tools/uncrustify.cfg " + changed_file),
+            shell=True,
+        )
+    ]
 
     if failed_files and uncrustify:
         run_uncrustify(changed_files)
@@ -188,7 +177,7 @@ def check_uncrustify(changed_files, uncrustify=False):
 def run_uncrustify(changed_files):
     """Run uncrustify to fix formatting in a set of files"""
     for file in changed_files:
-        format_call = ( 'uncrustify -q -c tools/uncrustify.cfg -f {} -o {}'.format(file, file) )
+        format_call = f'uncrustify -q -c tools/uncrustify.cfg -f {file} -o {file}'
         subprocess.check_output(format_call, shell=True)
 
 

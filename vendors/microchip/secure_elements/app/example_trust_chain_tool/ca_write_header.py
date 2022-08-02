@@ -85,7 +85,7 @@ ${jitr_certificate}
 """)
 
 def convert_pem_to_c_pem(pem):
-    return ''.join(['\"{}\\n\"\\\n'.format(x) for x in pem.strip().split('\n')]).strip()
+    return ''.join([f'\"{x}\\n\"\\\n' for x in pem.strip().split('\n')]).strip()
 
 
 def write_credentials_to_header(header, key, signer, device):

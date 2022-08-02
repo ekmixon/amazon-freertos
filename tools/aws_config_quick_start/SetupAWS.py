@@ -20,7 +20,7 @@ def validate_json_text(json_text):
     #Check that WiFi Security contains a valid value.
     wifi_security = json_text['wifi_security']
     if wifi_security not in ['eWiFiSecurityOpen', 'eWiFiSecurityWEP', 'eWiFiSecurityWPA', 'eWiFiSecurityWPA2']:
-        print("{} is not a valid wifi_security value.".format(wifi_security))
+        print(f"{wifi_security} is not a valid wifi_security value.")
         print("wifi_security value must be one of ['eWiFiSecurityOpen', 'eWiFiSecurityWEP', 'eWiFiSecurityWPA', 'eWiFiSecurityWPA2'].")
         print("Please correct wifi_security value in configure.json.")
         sys.exit(1)
@@ -43,37 +43,31 @@ def prereq():
 
         # Store certId
         cert_id = result['certificateId']
-        cert_id_filename = thing_name + '_cert_id_file'
-        print('Writing certificate ID to: {}'.format(cert_id_filename))
-        cert_id_file = open(cert_id_filename, 'w')
-        cert_id_file.write(cert_id)
-        cert_id_file_path = os.path.abspath(cert_id_filename)
-        os.chmod(cert_id_file_path, 0o444)
-        cert_id_file.close()
-
+        cert_id_filename = f'{thing_name}_cert_id_file'
+        print(f'Writing certificate ID to: {cert_id_filename}')
+        with open(cert_id_filename, 'w') as cert_id_file:
+            cert_id_file.write(cert_id)
+            cert_id_file_path = os.path.abspath(cert_id_filename)
+            os.chmod(cert_id_file_path, 0o444)
         # Store cert_pem as file
         cert_pem = result['certificatePem']
-        cert_pem_filename = thing_name + '_cert_pem_file'
-        print('Writing certificate PEM to: {}'.format(cert_pem_filename))
-        cert_pem_file = open(cert_pem_filename, 'w')
-        cert_pem_file.write(cert_pem)
-        cert_pem_file_path = os.path.abspath(cert_pem_filename)
-        os.chmod(cert_pem_file_path, 0o444)
-        cert_pem_file.close()
-
+        cert_pem_filename = f'{thing_name}_cert_pem_file'
+        print(f'Writing certificate PEM to: {cert_pem_filename}')
+        with open(cert_pem_filename, 'w') as cert_pem_file:
+            cert_pem_file.write(cert_pem)
+            cert_pem_file_path = os.path.abspath(cert_pem_filename)
+            os.chmod(cert_pem_file_path, 0o444)
         # Store private key PEM as file
         private_key_pem = result['keyPair']['PrivateKey']
-        private_key_pem_filename = thing_name + '_private_key_pem_file'
-        print('Writing private key PEM to: {}'.format(private_key_pem_filename))
-        private_key_pem_file = open(private_key_pem_filename, 'w')
-        private_key_pem_file.write(private_key_pem)
-        private_key_pem_file_path = os.path.abspath(private_key_pem_filename)
-        os.chmod(private_key_pem_file_path, 0o444)
-        private_key_pem_file.close()
-
+        private_key_pem_filename = f'{thing_name}_private_key_pem_file'
+        print(f'Writing private key PEM to: {private_key_pem_filename}')
+        with open(private_key_pem_filename, 'w') as private_key_pem_file:
+            private_key_pem_file.write(private_key_pem)
+            private_key_pem_file_path = os.path.abspath(private_key_pem_filename)
+            os.chmod(private_key_pem_file_path, 0o444)
         # Create a Policy
         policy_document = misc.create_policy_document()
-        policy_name = thing_name + '_amazon_freertos_policy'
+        policy_name = f'{thing_name}_amazon_freertos_policy'
         policy_obj = policy.Policy(policy_name, policy_document)
         policy_obj.create()
 
@@ -95,21 +89,21 @@ def update_credential_file():
     wifi_security = json_text['wifi_security']
 
     # Read cert_pem from file
-    cert_pem_filename = thing_name + '_cert_pem_file'
+    cert_pem_filename = f'{thing_name}_cert_pem_file'
     try:
         cert_pem_file = open(cert_pem_filename, 'r')
     except IOError:
-        print("%s file not found. Run prerequisite step"%cert_pem_filename)
+        print(f"{cert_pem_filename} file not found. Run prerequisite step")
         sys.exit(1)
     else:
         cert_pem = cert_pem_file.read()
 
     # Read private_key_pem from file
-    private_key_pem_filename = thing_name + '_private_key_pem_file'
+    private_key_pem_filename = f'{thing_name}_private_key_pem_file'
     try:
         private_key_pem_file = open(private_key_pem_filename, 'r')
     except IOError:
-        print("%s file not found. Run prerequisite step"%private_key_pem_filename)
+        print(f"{private_key_pem_filename} file not found. Run prerequisite step")
         sys.exit(1)
     else:
         private_key_pem = private_key_pem_file.read()
@@ -133,31 +127,30 @@ def delete_prereq():
     thing_obj.delete()
 
     # Delete certificate
-    cert_id_filename = thing_name + '_cert_id_file'
-    cert_id_file = open(cert_id_filename, 'r')
-    cert_id =  cert_id_file.read()
-    cert_obj = certs.Certificate(cert_id)
-    cert_obj.delete()
-    cert_id_file.close()
+    cert_id_filename = f'{thing_name}_cert_id_file'
+    with open(cert_id_filename, 'r') as cert_id_file:
+        cert_id =  cert_id_file.read()
+        cert_obj = certs.Certificate(cert_id)
+        cert_obj.delete()
     cert_id_file_path = os.path.abspath(cert_id_filename)
     os.chmod(cert_id_file_path, 0o666)
-    print("Deleting {}".format(cert_id_filename))
+    print(f"Deleting {cert_id_filename}")
     os.remove(cert_id_filename)
 
     # Delete cert_pem file and private_key_pem file
-    cert_pem_filename = thing_name + '_cert_pem_file'
-    private_key_pem_filename = thing_name + '_private_key_pem_file'
+    cert_pem_filename = f'{thing_name}_cert_pem_file'
+    private_key_pem_filename = f'{thing_name}_private_key_pem_file'
     cert_pem_file_path = os.path.abspath(cert_pem_filename)
     private_key_pem_file_path = os.path.abspath(private_key_pem_filename)
     os.chmod(cert_pem_file_path, 0o666)
     os.chmod(private_key_pem_file_path, 0o666)
-    print("Deleting {}".format(cert_pem_filename))
+    print(f"Deleting {cert_pem_filename}")
     os.remove(cert_pem_filename)
-    print("Deleting {}".format(private_key_pem_filename))
+    print(f"Deleting {private_key_pem_filename}")
     os.remove(private_key_pem_filename)
 
     # Delete policy
-    policy_name = thing_name + '_amazon_freertos_policy'
+    policy_name = f'{thing_name}_amazon_freertos_policy'
     policy_obj = policy.Policy(policy_name)
     policy_obj.delete()
     print("Successfully deleted prereqs!")

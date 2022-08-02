@@ -35,7 +35,7 @@ from bleAdapter import bleAdapter
 
 
 def main():
-    scan_filter = dict()
+    scan_filter = {}
 
     bleAdapter.init()
     agent = securityAgent.createSecurityAgent()

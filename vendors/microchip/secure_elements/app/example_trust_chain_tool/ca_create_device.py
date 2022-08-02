@@ -64,7 +64,7 @@ def create_device_cert(public_key, device_id, signer_file, signer_key_file):
 
     # Make sure files exist
     if not (os.path.isfile(signer_file) and os.path.isfile(signer_key_file)):
-        raise FileNotFoundError('Failed to find {} or {}'.format(signer_file, signer_key_file))
+        raise FileNotFoundError(f'Failed to find {signer_file} or {signer_key_file}')
 
     # Load the Signing key from the file
     with open(signer_key_file, 'rb') as f:

@@ -29,7 +29,7 @@ def load_or_create_key(filename):
                 data=f.read(),
                 password=None,
                 backend=crypto_be)
-    if priv_key == None:
+    if priv_key is None:
         # No private key loaded, generate new one
         priv_key = ec.generate_private_key(ec.SECP256R1(), crypto_be)
         # Save private key to file
@@ -48,9 +48,12 @@ def create_intermediate_cert(reg_code, verifyfile, certfile, keyfile, rootfile, 
 
     print('\nLoading root CA key')
     if not os.path.isfile(rootkeyfile):
-        raise Exception('Failed to find root CA key file, ' + rootkeyfile + '. Have you run ca_create_root first?')
+        raise Exception(
+            f'Failed to find root CA key file, {rootkeyfile}. Have you run ca_create_root first?'
+        )
+
     with open(rootkeyfile, 'rb') as f:
-        print('    Loading from ' + f.name)
+        print(f'    Loading from {f.name}')
         root_ca_priv_key = serialization.load_pem_private_key(
             data=f.read(),
             password=None,
@@ -58,26 +61,29 @@ def create_intermediate_cert(reg_code, verifyfile, certfile, keyfile, rootfile, 
 
     print('\nLoading Root CA certificate')
     if not os.path.isfile(rootfile):
-        raise Exception('Failed to find root CA certificate file, ' + rootfile + '. Have you run ca_create_root first?')
+        raise Exception(
+            f'Failed to find root CA certificate file, {rootfile}. Have you run ca_create_root first?'
+        )
+
     with open(rootfile, 'rb') as f:
-        print('    Loading from ' + f.name)
+        print(f'    Loading from {f.name}')
         root_ca_cert = x509.load_pem_x509_certificate(f.read(), crypto_be)
 
     # Create signer CA certificate
     print('\nGenerating Signer/Intermediate Certificate')
-    
+
     # Please note that the structure of the signer certificate is part of certificate definition in the firmware
     # If any part of it is changed, it will also need to be changed in the firmware.
     builder = x509.CertificateBuilder()
     builder = builder.serial_number(random_cert_sn(16))
     builder = builder.subject_name(x509.Name([
         x509.NameAttribute(x509.oid.NameOID.ORGANIZATION_NAME, u'Example Inc'),
-        x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, u'Example Signer FFFF')]))    
+        x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, u'Example Signer FFFF')]))
     builder = builder.issuer_name(root_ca_cert.subject)
     builder = builder.not_valid_before(datetime.datetime.now(tz=pytz.utc))
     builder = builder.not_valid_after(builder._not_valid_before.replace(year=builder._not_valid_before.year + 10))
     builder = builder.public_key(signer_ca_priv_key.public_key())
-    
+
     builder = builder.add_extension(
         x509.BasicConstraints(ca=True, path_length=0),
         critical=True)
@@ -94,7 +100,7 @@ def create_intermediate_cert(reg_code, verifyfile, certfile, keyfile, rootfile, 
             encipher_only=False,
             decipher_only=False),
         critical=True)
-    
+
     builder = builder.add_extension(
         x509.SubjectKeyIdentifier.from_public_key(signer_ca_priv_key.public_key()),
         critical=False)
@@ -112,9 +118,9 @@ def create_intermediate_cert(reg_code, verifyfile, certfile, keyfile, rootfile, 
 
     # Write signer CA certificate to file
     with open(certfile, 'wb') as f:
-        print('    Saving to ' + f.name)
+        print(f'    Saving to {f.name}')
         f.write(signer_ca_cert.public_bytes(encoding=serialization.Encoding.PEM))
-        
+
     # Generate a verification certificate around the registration code (subject common name)
     print('\nGenerating signer CA AWS verification certificate')
     builder = x509.CertificateBuilder()
@@ -131,7 +137,7 @@ def create_intermediate_cert(reg_code, verifyfile, certfile, keyfile, rootfile, 
 
     # Write signer CA certificate to file for reference
     with open(verifyfile, 'wb') as f:
-        print('    Saved to ' + f.name)
+        print(f'    Saved to {f.name}')
         f.write(signer_ca_ver_cert.public_bytes(encoding=serialization.Encoding.PEM))
 
     print('\nDone')

@@ -45,8 +45,8 @@ def i2c(id, tick):
         wr_bytes = d
     elif b == 1:
         if d[0] == 0x80:
-            rd_bytes = [random.randrange(0, 128) for i in range(0, 16)]
-            s, b, d = pi.bsc_i2c(0x9, ''.join('{}'.format(chr(b)) for b in rd_bytes))
+            rd_bytes = [random.randrange(0, 128) for _ in range(16)]
+            s, b, d = pi.bsc_i2c(0x9, ''.join(f'{chr(b)}' for b in rd_bytes))
 
 
 if __name__ == "__main__":
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     s.bind((HOST, PORT))
     s.listen(1)
 
-    wr_bytes, rd_bytes = ([] for i in range(2))
+    wr_bytes, rd_bytes = ([] for _ in range(2))
     # Respond to BSC slave activity
     e = pi.event_callback(pigpio.EVENT_BSC, i2c)
     # Configure BSC as I2C slave

@@ -126,7 +126,7 @@ def process(folder, files):
             LOGGER.error("The offending entry is %s", config)
             return
 
-        new_entry = "%s__config_%s" % (json_content["ENTRY"], configname)
+        new_entry = f'{json_content["ENTRY"]}__config_{configname}'
 
         new_config_folder = os.path.join(folder, new_entry)
         pathlib.Path(new_config_folder).mkdir(exist_ok=True, parents=True)
@@ -135,8 +135,9 @@ def process(folder, files):
             if file.endswith("harness.c"):
                 shutil.copy(
                     os.path.join(folder, file),
-                    os.path.join(
-                        new_config_folder, "%s_harness.c" % new_entry))
+                    os.path.join(new_config_folder, f"{new_entry}_harness.c"),
+                )
+
                 harness_copied = True
 
         if not harness_copied:

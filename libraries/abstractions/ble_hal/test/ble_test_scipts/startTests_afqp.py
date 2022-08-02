@@ -35,12 +35,10 @@ from bleAdapter import bleAdapter
 ENABLE_TC_AFQP_READ_WRITE_LONG = 1
 
 def main():
-    scan_filter = dict()
-
     bleAdapter.init()
     agent = securityAgent.createSecurityAgent()
 
-    scan_filter.update({"UUIDs": [runTest.DUT_UUID_128]})
+    scan_filter = {"UUIDs": [runTest.DUT_UUID_128]}
     bleAdapter.setDiscoveryFilter(scan_filter)
     # Discovery test
     bleAdapter.startDiscovery(runTest.discoveryEventCb)

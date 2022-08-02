@@ -67,16 +67,16 @@ if __name__ == "__main__":
     rpi_login = args.login_name[0]
     rpi_pwd = args.password[0]
 
-    with open(scriptdir+'/test_result.csv', 'w', newline='') as csvfile:
+    with open(f'{scriptdir}/test_result.csv', 'w', newline='') as csvfile:
         field_name = ['test name', 'test result']
         writer = csv.DictWriter(csvfile, fieldnames=field_name)
         writer.writeheader()
         root_dir = scriptdir
         print(scriptdir)
-        for i in range(0, len(test_class_list)):
-            print(test_class_list[i][0].__name__)
-            os.chdir(scriptdir+'/'+test_class_list[i][1])
-            test_obj = test_class_list[i][0](serial_port, rpi_ip, rpi_login, rpi_pwd, writer)
+        for testclass in test_class_list:
+            print(testclass[0].__name__)
+            os.chdir(f'{scriptdir}/{testclass[1]}')
+            test_obj = testclass[0](serial_port, rpi_ip, rpi_login, rpi_pwd, writer)
             test_obj.auto_run()
             os.chdir(root_dir)
             print("****************************")

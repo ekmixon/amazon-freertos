@@ -30,12 +30,17 @@ def check_fs(root, rules_path, vendor, board, ide):
     for path in rules['error']:
         path = os.path.join(root, path.format(vendor=vendor, board=board, ide=ide))
         if not os.path.exists(path):
-            errors.append(Error(type='error', info='Required path ' + path + ' is not found.'))
+            errors.append(Error(type='error', info=f'Required path {path} is not found.'))
 
     for path in rules['warning']:
         path = os.path.join(root, path.format(vendor=vendor, board=board, ide=ide))
         if not os.path.exists(path):
-            errors.append(Error(type='warning', info='Optional path ' + path + ' is not found.'))
+            errors.append(
+                Error(
+                    type='warning', info=f'Optional path {path} is not found.'
+                )
+            )
+
 
     return errors
 
@@ -45,7 +50,13 @@ def get_platform_name_error(file_path):
     """
     with open(file_path, 'r') as file:
         if not list(filter(lambda line: 'configPLATFORM_NAME' in line, file.readlines())):
-            return [Error(type='error', info='configPLATFORM_NAME not found in ' + file.name)]
+            return [
+                Error(
+                    type='error',
+                    info=f'configPLATFORM_NAME not found in {file.name}',
+                )
+            ]
+
     return []
 
 
@@ -74,35 +85,53 @@ def check_build_artifacts(files):
     bin_files = list(filter(lambda f: f[-4:] == '.bin', files))
     hex_files = list(filter(lambda f: f[-4:] == '.hex', files))
     if o_files:
-        errors.append(Error(
-            type='error',
-            info='Build artifact found: ' + o_files[0] + ', please delete all build artifacts or create .gitignore before checking in.'
-        ))
+        errors.append(
+            Error(
+                type='error',
+                info=f'Build artifact found: {o_files[0]}, please delete all build artifacts or create .gitignore before checking in.',
+            )
+        )
+
     if d_files:
-        errors.append(Error(
-            type='error',
-            info='Build artifact found: ' + d_files[0] + ', please delete all build artifacts or create .gitignore before checking in.'
-        ))
+        errors.append(
+            Error(
+                type='error',
+                info=f'Build artifact found: {d_files[0]}, please delete all build artifacts or create .gitignore before checking in.',
+            )
+        )
+
     if map_files:
-        errors.append(Error(
-            type='error',
-            info='Build artifact found: ' + elf_files[0] + ', please delete all build artifacts or create .gitignore before checking in.'
-        ))
+        errors.append(
+            Error(
+                type='error',
+                info=f'Build artifact found: {elf_files[0]}, please delete all build artifacts or create .gitignore before checking in.',
+            )
+        )
+
     if elf_files:
-        errors.append(Error(
-            type='error',
-            info='Build artifact found: ' + map_files[0] + ', please delete all build artifacts or create .gitignore before checking in.'
-        ))
+        errors.append(
+            Error(
+                type='error',
+                info=f'Build artifact found: {map_files[0]}, please delete all build artifacts or create .gitignore before checking in.',
+            )
+        )
+
     if bin_files:
-        errors.append(Error(
-            type='error',
-            info='Build artifact found: ' + bin_files[0] + ', please delete all build artifacts or create .gitignore before checking in.'
-        ))
+        errors.append(
+            Error(
+                type='error',
+                info=f'Build artifact found: {bin_files[0]}, please delete all build artifacts or create .gitignore before checking in.',
+            )
+        )
+
     if hex_files:
-        errors.append(Error(
-            type='error',
-            info='Build artifact found: ' + hex_files[0] + ', please delete all build artifacts or create .gitignore before checking in.'
-        ))
+        errors.append(
+            Error(
+                type='error',
+                info=f'Build artifact found: {hex_files[0]}, please delete all build artifacts or create .gitignore before checking in.',
+            )
+        )
+
     return errors
 
 
@@ -132,15 +161,20 @@ def get_license_match_error(lic, lic_file_path):
     # re.split() will match the empty string.
     lic_words = list(filter(None, re.split('[^0-9a-zA-Z]+', lic)))
     i = 0
-    same = False
-    for i, word in enumerate(lic_words):
-        if word == template_lic_words[0]:
-            # Element wise comparison of the two arrays.
-            if lic_words[i:i+len(template_lic_words)] == template_lic_words:
-                same = True
-                break
+    same = any(
+        word == template_lic_words[0]
+        and lic_words[i : i + len(template_lic_words)] == template_lic_words
+        for i, word in enumerate(lic_words)
+    )
+
     if same:
-        return [Error(type='warning', info='FreeRTOS license is in file: ' + lic_file_path)]
+        return [
+            Error(
+                type='warning',
+                info=f'FreeRTOS license is in file: {lic_file_path}',
+            )
+        ]
+
     return []
 
 
@@ -175,10 +209,13 @@ def get_copyright_errors(lic, file_path, is_config_file):
 
             # Get the version error for the portable layer code
             if FIRST_VERSION not in line:
-                errors.append(Error(
-                    type='error',
-                    info=file_path + ' should be the first version of the file (V1.0.0).'
-                ))
+                errors.append(
+                    Error(
+                        type='error',
+                        info=f'{file_path} should be the first version of the file (V1.0.0).',
+                    )
+                )
+
 
             # Get the portable layer name error
             start = line.find(COPYRIGHT_NAME) + len(COPYRIGHT_NAME) + 1 # +1 for space
@@ -201,7 +238,7 @@ def get_copyright_errors(lic, file_path, is_config_file):
 
     # If the version line was not found flag errors.
     if not version_found:
-        if basename(file_path) == 'FreeRTOSIPConfig.h' or basename(file_path) == 'FreeRTOSConfig.h':
+        if basename(file_path) in ['FreeRTOSIPConfig.h', 'FreeRTOSConfig.h']:
             pass # Skip version warnings for FreeRTOS config files.
         elif is_config_file:
             errors.append(Error(
@@ -297,25 +334,29 @@ def get_eclipse_project_errors(project_path):
     tree = ElementTree.parse(project_path)
     projectDescription = tree.getroot() # eclipse .project document xml root element is <projectDescription>
     if projectDescription.find('name').text != 'aws_demos':
-        errors.append(Error(
-            type='error',
-            info='In .project Eclipse IDE project name must be \"aws_demos\" at line {}.'.format(_get_line_number(file_lines, '<name>'))
-        ))
+        errors.append(
+            Error(
+                type='error',
+                info=f"""In .project Eclipse IDE project name must be \"aws_demos\" at line {_get_line_number(file_lines, '<name>')}.""",
+            )
+        )
+
 
     linkedResources = projectDescription.find('linkedResources')
     for link in linkedResources.findall('link'):
         locationURI = link.find('locationURI')
         name = link.find('name')
-        if locationURI is not None:
-            if locationURI.text == 'virtual:/virtual':
-                continue
+        if locationURI is None:
+            error_line = _get_line_number(file_lines, f'<name>{name.text}</name>') - 1
+            errors.append(
+                Error(
+                    type='error',
+                    info=f'Eclipse .project linked resource {name.text} MUST have a <locationURI> tag at line {error_line}.',
+                )
+            )
+
+        elif locationURI.text != 'virtual:/virtual':
             root_var_set.add(locationURI.text[:locationURI.text.find('/')])
-        else:
-            error_line = _get_line_number(file_lines, '<name>{}</name>'.format(name.text)) - 1
-            errors.append(Error(
-                type='error',
-                info='Eclipse .project linked resource {} MUST have a <locationURI> tag at line {}.'.format(name.text, error_line)
-            ))
     if len(root_var_set) > 1:
         errors.append(Error(
             type='error',
@@ -341,18 +382,18 @@ def get_eclipse_cproject_errors(cproject_path, afr_root_var):
     for option_include_path_element in option_include_path_elements:
         for listOptionValue in option_include_path_element.findall('listOptionValue'):
             value = listOptionValue.get('value')
-            if afr_root_var_ref in value:
+            if afr_root_var_ref in value or workspace_ref in value:
                 continue
-            elif workspace_ref in value:
-                continue
-            else:
-                if value.startswith('\"') and value.endswith('\"'):
-                    value = value[1:-1]
-                error_line = _get_line_number(file_lines, value)
-                errors.append(Error(
+            if value.startswith('\"') and value.endswith('\"'):
+                value = value[1:-1]
+            error_line = _get_line_number(file_lines, value)
+            errors.append(
+                Error(
                     type='warning',
-                    info='Eclipse .cproject include path \"{}\" does not extend from {} at line {}'.format(value, afr_root_var_ref, error_line)
-                ))
+                    info=f'Eclipse .cproject include path \"{value}\" does not extend from {afr_root_var_ref} at line {error_line}',
+                )
+            )
+
     return errors
 
 
@@ -373,12 +414,20 @@ def report_errors(errors):
     """Print errors and warnings to stdout.
     """
     for error in errors:
-        print(error.type.upper() + ': ' + error.info)
+        print(f'{error.type.upper()}: {error.info}')
 
 
 def main():
     parser = argparse.ArgumentParser(description='AFQP File System Check')
-    parser.add_argument('--root', action='store', required=False, dest='root', default=AFR_ROOT, help='FreeRTOS Root Path. This path is relative to the /afqp_check folder by default ({}).'.format(AFR_ROOT))
+    parser.add_argument(
+        '--root',
+        action='store',
+        required=False,
+        dest='root',
+        default=AFR_ROOT,
+        help=f'FreeRTOS Root Path. This path is relative to the /afqp_check folder by default ({AFR_ROOT}).',
+    )
+
     parser.add_argument('--rules', action='store', required=False, dest='rules_path', default='rules.json', help='The path to the rules json file. This path is relative to the /afqp_check folder by default.')
     parser.add_argument('--files', nargs='+', required=False, dest='files', help='List of files changed.')
     parser.add_argument('--vendor', action='store', required=True, dest='vendor', help='Expected vendor directory name.')

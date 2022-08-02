@@ -29,7 +29,7 @@ def load_or_create_key(filename):
                 data=f.read(),
                 password=None,
                 backend=crypto_be)
-    if priv_key == None:
+    if priv_key is None:
         # No private key loaded, generate new one
         priv_key = ec.generate_private_key(ec.SECP256R1(), crypto_be)
         # Save private key to file
@@ -75,7 +75,7 @@ def create_root_cert_key(certfile, keyfile, pubfile):
 
     # Write root CA certificate to file
     with open(certfile, 'wb') as f:
-        print('    Saving to ' + f.name)
+        print(f'    Saving to {f.name}')
         f.write(root_ca_cert.public_bytes(encoding=serialization.Encoding.PEM))
 
     # Save root public key

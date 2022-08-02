@@ -57,13 +57,10 @@ def main():
 
     isTestSuccessFull = True
 
-    scan_filter = dict()
-
     bleAdapter.init()
     agent = securityAgent.createSecurityAgent(agent=agent)
 
-    scan_filter.update({"UUIDs": [runTest.DUT_UUID_128]})
-
+    scan_filter = {"UUIDs": [runTest.DUT_UUID_128]}
     for i in range(
             STRESS_TEST_INIT_REPETITION *
             STRESS_TEST_ENABLE_REPETITION):
@@ -100,7 +97,7 @@ def main():
         isTestSuccessFull &= runTest.checkProperties(bleAdapter.gatt)
 
         # Check read/write, simple connection
-        for i in range(STRESS_TEST_MODULE_REPETITION):
+        for _ in range(STRESS_TEST_MODULE_REPETITION):
             isTestSuccessFull &= runTest.readWriteSimpleConnection()
             runTest.submitTestResult(
                 isTestSuccessFull,
@@ -113,7 +110,7 @@ def main():
             runTest.DUT_INDICATE_CHAR_UUID)  # subscribe for next test
 
         # Check read/write, simple connection
-        for i in range(STRESS_TEST_MODULE_REPETITION):
+        for _ in range(STRESS_TEST_MODULE_REPETITION):
             # Enable and receive notification and indication then disable.
             bleAdapter.setNotificationCallBack(runTest.notificationCb)
             isTestSuccessFull = True

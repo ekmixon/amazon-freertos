@@ -64,16 +64,19 @@ def configure_device(iface='hid', device='ecc', i2c_addr=None, keygen=True, **kw
     load_cryptoauthlib()
 
     # Get the target default config
-    cfg = eval('cfg_at{}a_{}_default()'.format(atca_names_map.get(device), atca_names_map.get(iface)))
+    cfg = eval(
+        f'cfg_at{atca_names_map.get(device)}a_{atca_names_map.get(iface)}_default()'
+    )
+
 
     # Set interface parameters
     if kwargs is not None:
         for k, v in kwargs.items():
-            icfg = getattr(cfg.cfg, 'atca{}'.format(iface))
+            icfg = getattr(cfg.cfg, f'atca{iface}')
             setattr(icfg, k, int(v, 16))
 
     # Basic Raspberry Pi I2C check
-    if 'i2c' == iface and check_if_rpi():
+    if iface == 'i2c' and check_if_rpi():
         cfg.cfg.atcai2c.bus = 1
 
     # Initialize the stack
@@ -108,8 +111,8 @@ def configure_device(iface='hid', device='ecc', i2c_addr=None, keygen=True, **kw
     assert ATCA_SUCCESS == atcab_is_locked(1, is_locked)
     data_zone_lock = bool(is_locked.value)
 
-    print('    Config Zone: {}'.format('Locked' if config_zone_lock else 'Unlocked'))
-    print('    Data Zone: {}'.format('Locked' if data_zone_lock else 'Unlocked'))
+    print(f"    Config Zone: {'Locked' if config_zone_lock else 'Unlocked'}")
+    print(f"    Data Zone: {'Locked' if data_zone_lock else 'Unlocked'}")
 
     # Get Current I2C Address
     print('\nGetting the I2C Address')
@@ -122,7 +125,7 @@ def configure_device(iface='hid', device='ecc', i2c_addr=None, keygen=True, **kw
     if not config_zone_lock:
         config = _configs.get(dev_name)
         if config is None:
-            raise ValueError('Unknown Device Type: {}'.format(dev_type))
+            raise ValueError(f'Unknown Device Type: {dev_type}')
 
         # Update with the target I2C Address
         if i2c_addr is not None:
@@ -134,10 +137,10 @@ def configure_device(iface='hid', device='ecc', i2c_addr=None, keygen=True, **kw
             print('    The AT88CK590 Kit does not support changing the I2C addresses of devices.')
             print('    If you are not using an AT88CK590 kit you may continue without errors')
             print('    otherwise exit and specify a compatible (0x{:02X}) address.'.format(ck590_i2c_addr))
-            if 'Y' != input('    Continue (Y/n): '):
+            if input('    Continue (Y/n): ') != 'Y':
                 exit(0)
 
-        print('    Programming {} Configuration'.format(dev_name))
+        print(f'    Programming {dev_name} Configuration')
 
         # Write configuration
         assert ATCA_SUCCESS == atcab_write_bytes_zone(0, 0, 16, config, len(config))
@@ -157,7 +160,7 @@ def configure_device(iface='hid', device='ecc', i2c_addr=None, keygen=True, **kw
         print('        Locked')
     else:
         print('    Locked, skipping')
-    
+
     # Check data zone lock
     print('\nActivating Configuration')
     if not data_zone_lock:
@@ -194,7 +197,7 @@ def key_gen(dev_name):
     elif dev_name == 'ATECC608A':
         config = Atecc608aConfig.from_buffer(config_data)
     else:
-        raise ValueError('Unsupported device {}'.format(dev_name))
+        raise ValueError(f'Unsupported device {dev_name}')
 
     # Review all slot configurations and generate keys where possible
     for slot in range(16):
@@ -202,21 +205,21 @@ def key_gen(dev_name):
             continue  # Not a private key
         if config.LockValue != 0x55:
             # Data zone is already locked, additional conditions apply
-            skip_msg = '    Skipping key pair generation in slot {}: '.format(slot)
+            skip_msg = f'    Skipping key pair generation in slot {slot}: '
             if not config.SlotConfig[slot].WriteConfig & 0x02:
-                print(skip_msg + 'GenKey is disabled')
+                print(f'{skip_msg}GenKey is disabled')
                 continue
             if not config.SlotLocked & (1 << slot):
-                print(skip_msg + 'Slot has ben locked')
+                print(f'{skip_msg}Slot has ben locked')
                 continue
             if config.KeyConfig[slot].ReqAuth:
-                print(skip_msg + 'Slot requires authorization')
+                print(f'{skip_msg}Slot requires authorization')
                 continue
             if config.KeyConfig[slot].PersistentDisable:
-                print(skip_msg + 'Slot requires persistent latch')
+                print(f'{skip_msg}Slot requires persistent latch')
                 continue
 
-        print('    Generating key pair in slot {}'.format(slot))
+        print(f'    Generating key pair in slot {slot}')
         public_key = bytearray(64)
         assert ATCA_SUCCESS == atcab_genkey(slot, public_key)
         print(convert_ec_pub_to_pem(public_key))

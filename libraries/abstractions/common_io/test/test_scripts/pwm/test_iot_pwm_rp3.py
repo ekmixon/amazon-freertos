@@ -61,9 +61,8 @@ def callback_function(gpio, level, tick):
 
             rising_edge = tick
 
-        else:
-            if rising_edge != -1:
-                high = pigpio.tickDiff(rising_edge, tick)
+        elif rising_edge != -1:
+            high = pigpio.tickDiff(rising_edge, tick)
 
 
 def socket_thread(s):
@@ -91,9 +90,7 @@ def start_pwm(pi, gpio=23, frequency=1000, duty_cycle=30):
     :param duty_cycle: pwm duty cycle
     :return: wave id
     """
-    if duty_cycle > 100:
-        duty_cycle = 100
-
+    duty_cycle = min(duty_cycle, 100)
     pi.set_mode(gpio, pigpio.OUTPUT)
     # Calculate period in micro seconds.
     period = int(1000000.0 / frequency)

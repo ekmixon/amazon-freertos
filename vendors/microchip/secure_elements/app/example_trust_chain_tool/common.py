@@ -50,10 +50,10 @@ def setup_example_runner(module):
     example = os.path.basename(module).split('.')[0]
 
     try:
-        with open(example + '.md', 'r') as f:
+        with open(f'{example}.md', 'r') as f:
             details = f.read()
     except FileNotFoundError:
-        details = example.upper() + ' Example'
+        details = f'{example.upper()} Example'
 
     parser = argparse.ArgumentParser(description=details, 
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -76,10 +76,12 @@ def pretty_print_hex(a, l=16, indent=''):
     """
     Format a list/bytes/bytearray object into a formatted ascii hex string
     """
-    lines = []
     a = bytearray(a)
-    for x in range(0, len(a), l):
-        lines.append(indent + ' '.join(['{:02X}'.format(y) for y in a[x:x+l]]))
+    lines = [
+        indent + ' '.join(['{:02X}'.format(y) for y in a[x : x + l]])
+        for x in range(0, len(a), l)
+    ]
+
     return '\n'.join(lines)
 
 
@@ -89,12 +91,15 @@ def convert_ec_pub_to_pem(raw_pub_key):
     """
     public_key_der = bytearray.fromhex('3059301306072A8648CE3D020106082A8648CE3D03010703420004') + raw_pub_key
     public_key_b64 = base64.b64encode(public_key_der).decode('ascii')
-    public_key_pem = (
+    return (
         '-----BEGIN PUBLIC KEY-----\n'
-        + '\n'.join(public_key_b64[i:i + 64] for i in range(0, len(public_key_b64), 64)) + '\n'
+        + '\n'.join(
+            public_key_b64[i : i + 64]
+            for i in range(0, len(public_key_b64), 64)
+        )
+        + '\n'
         + '-----END PUBLIC KEY-----'
     )
-    return public_key_pem
 
 
 def check_if_rpi():

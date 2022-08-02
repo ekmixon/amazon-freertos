@@ -104,7 +104,7 @@ class bleAdapter:
         isSuccessfull = False
 
         try:
-            while (isSuccessfull == False):
+            while not isSuccessfull:
                 bleAdapter.discoverAllPrimaryServicesEvent = True
                 bleAdapter.getDeviceInterface(
                     bleAdapter.remoteDevice).Connect(
@@ -117,12 +117,10 @@ class bleAdapter:
                 sys.stdout.flush()
                 time.sleep(2)  # Should wait instead for services resolved
         except dbus.exceptions.DBusException as error:
-            print("Adapter could not connect:" + str(error))
+            print(f"Adapter could not connect:{str(error)}")
             print("Retrying after 1s")
             sys.stdout.flush()
             time.sleep(1)
-            pass
-
         return isSuccessfull
 
     @staticmethod
@@ -147,14 +145,13 @@ class bleAdapter:
 
         if value == desiredPropertyValue or timeout is None:
             return value
-        else:
-            bleAdapter.propertyName = propertyName
-            bleAdapter.propertyDesiredValue = desiredPropertyValue
-            GObject.timeout_add(timeout * 1000, timeoutHandler)
-            mainloop.run()
-            bleAdapter.propertyName = None
-            return bleAdapter.getPropertie(
-                bleAdapter.remoteDevice, propertyName)
+        bleAdapter.propertyName = propertyName
+        bleAdapter.propertyDesiredValue = desiredPropertyValue
+        GObject.timeout_add(timeout * 1000, timeoutHandler)
+        mainloop.run()
+        bleAdapter.propertyName = None
+        return bleAdapter.getPropertie(
+            bleAdapter.remoteDevice, propertyName)
 
     @staticmethod
     def isDisconnected(timeout=None):
@@ -164,8 +161,7 @@ class bleAdapter:
                 "Connected", 0, timeout)
             ret = (value == 0)
         except Exception as ex:
-            print("Caught exception while waiting for disconnect event " + str(ex))
-            pass
+            print(f"Caught exception while waiting for disconnect event {str(ex)}")
         return ret
 
     @staticmethod
@@ -176,9 +172,7 @@ class bleAdapter:
                 "Paired", 1, timeout)
             ret = (value == 1)
         except Exception as ex:
-            print("Caught exception while waiting for paired event" + str(ex))
-            pass
-
+            print(f"Caught exception while waiting for paired event{str(ex)}")
         return ret
 
     @staticmethod
@@ -207,7 +201,7 @@ class bleAdapter:
             mainloop.run()
             isSuccessfull &= cancelpairingEvent.get()
         except Exception as e:
-            print("BLE ADAPTER: Unable to pair, error: " + str(e))
+            print(f"BLE ADAPTER: Unable to pair, error: {str(e)}")
             sys.stdout.flush()
             isSuccessfull = False
         return isSuccessfull
@@ -224,7 +218,7 @@ class bleAdapter:
             mainloop.run()
             isSuccessfull = pairingEvent.get()
         except Exception as e:
-            print("BLE ADAPTER: Unable to pair, error: " + str(e))
+            print(f"BLE ADAPTER: Unable to pair, error: {str(e)}")
             sys.stdout.flush()
             isSuccessfull = False
         return isSuccessfull
@@ -244,10 +238,9 @@ class bleAdapter:
             bleAdapter.discoveryEventCb.im_func(obj)
 
         if bleAdapter.discoverAllPrimaryServicesEvent:
-            servicesResolved = bleAdapter.getPropertie(
-                obj, "ServicesResolved")
-
-            if servicesResolved:
+            if servicesResolved := bleAdapter.getPropertie(
+                obj, "ServicesResolved"
+            ):
                 mainloop.quit()
                 bleAdapter.discoverAllPrimaryServicesEvent = False
 
@@ -345,9 +338,7 @@ class bleAdapter:
                 "ServicesResolved", 1, timeout)
             ret = (value == 1)
         except exception as ex:
-            print("Caught exception while waiting for resolved services " + str(ex))
-            pass
-
+            print(f"Caught exception while waiting for resolved services {str(ex)}")
         return ret
 
     @staticmethod
@@ -471,7 +462,7 @@ class bleAdapter:
 
 
 def print_normal(address, properties):
-    print("[ " + address + " ]")
+    print(f"[ {address} ]")
 
     for key in properties.keys():
         value = properties[key]
@@ -480,7 +471,7 @@ def print_normal(address, properties):
         if (key == "Class"):
             print("    %s = 0x%06x" % (key, value))
         else:
-            print("    %s = %s" % (key, value))
+            print(f"    {key} = {value}")
 
     print()
 
@@ -493,7 +484,7 @@ def genericReply():
 
 def genericError(error):
     err_name = error.get_dbus_name()
-    print("Generic error: %s" % (error))
+    print(f"Generic error: {error}")
     sys.stdout.flush()
 
 
@@ -508,7 +499,7 @@ def attributeRead(ReadValue):
 
 
 def attributeAccessError(error):
-    print("Error in accessing attribute: %s" % (error))
+    print(f"Error in accessing attribute: {error}")
     sys.stdout.flush()
     attributeAccessEvent.put(False, None)
     mainloop.quit()
@@ -520,7 +511,7 @@ def pairingSuccess():
 
 
 def pairingError(error):
-    print("Error in pairing: %s" % (error))
+    print(f"Error in pairing: {error}")
     sys.stdout.flush()
     pairingEvent.put(False)
     mainloop.quit()
@@ -532,7 +523,7 @@ def cancelpairingSuccess():
 
 
 def cancelpairingError(error):
-    print("Error in cancel pairing: %s" % (error))
+    print(f"Error in cancel pairing: {error}")
     sys.stdout.flush()
     cancelpairingEvent.put(False)
     mainloop.quit()
@@ -544,7 +535,7 @@ def connectSuccess():
 
 
 def connectError(error):
-    print("Error in connect: %s" % (error))
+    print(f"Error in connect: {error}")
     sys.stdout.flush()
     connectEvent.put(False)
     mainloop.quit()
@@ -561,7 +552,7 @@ def timeoutHandler():
 
 
 def disconnectError(error):
-    print("Error in connect: %s" % (error))
+    print(f"Error in connect: {error}")
     sys.stdout.flush()
     disconnectEvent.put(False)
     mainloop.quit()

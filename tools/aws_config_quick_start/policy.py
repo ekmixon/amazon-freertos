@@ -18,13 +18,10 @@ class Policy():
 
     def delete(self):
         assert self.exists() == True, "Policy does not exist, cannot be deleted"
-        print("Deleted a policy named {} on AWS IoT Core.".format(self.name))
+        print(f"Deleted a policy named {self.name} on AWS IoT Core.")
         self.client.delete_policy(policyName=self.name)
 
     def exists(self):
         policies = self.client.list_policies()['policies']
-        for policy in policies:
-            if self.name == policy['policyName']:
-                return True
-        return False
+        return any(self.name == policy['policyName'] for policy in policies)
 

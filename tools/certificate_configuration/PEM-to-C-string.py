@@ -25,10 +25,10 @@ def printCredentialAsCString(file_path, type=None):
     print('============ Formatted', file_path,'===========\n')
 
     if type is not None:
-        print("#define "+CREDS_MACRO_MAP[type]+" \\")
+        print(f"#define {CREDS_MACRO_MAP[type]}" + " \\")
 
     # Format and print the PEM credential as C string.
-    split_cred_list = content.rstrip('\n').split("\n")  
+    split_cred_list = content.rstrip('\n').split("\n")
     for entry in split_cred_list[:-1]:  # Iterate over all lines of credentials except last one.
         print("\""+entry+"\\n\" \\")
     print("\""+split_cred_list[-1]+"\\n\"") # Print last line without the trailing '\'

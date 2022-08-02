@@ -36,8 +36,8 @@ import re
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(scriptdir)
 if parentdir not in sys.path:
-    print("Script Dir: %s" % scriptdir)
-    print("Parent Dir: %s" % parentdir)
+    print(f"Script Dir: {scriptdir}")
+    print(f"Parent Dir: {parentdir}")
     sys.path.append(parentdir)
 from test_iot_test_template import test_template
 
@@ -95,11 +95,14 @@ class TestI2cMasterAssisted(test_template):
 
         res = self._serial.read_until(terminator=serial.to_bytes([ord(c) for c in 'Ignored '])).decode('utf-8')
 
-        w_bytes = []
-        for x in re.sub(r'\r', '', res).split('\n'):
-            if x.find('IGNORE') != -1:
-                w_bytes = [s for s in x.split(',') if len(s) == 2]
-                break
+        w_bytes = next(
+            (
+                [s for s in x.split(',') if len(s) == 2]
+                for x in re.sub(r'\r', '', res).split('\n')
+                if x.find('IGNORE') != -1
+            ),
+            [],
+        )
 
         # Retrieve bytes read by rpi.
         s.sendall(b's')
@@ -140,7 +143,7 @@ class TestI2cMasterAssisted(test_template):
         :param cmd: iot test cmd
         :return:
         """
-        w_bytes, r_bytes = ([] for i in range(2))
+        w_bytes, r_bytes = ([] for _ in range(2))
 
         t_shell = threading.Thread(target=self.run_shell_script,
                                    args=(" ".join([self.shell_script, self._ip, self._login, self._pwd, '-s']),))
@@ -232,7 +235,7 @@ if __name__ == "__main__":
     rpi_login = args.login_name[0]
     rpi_pwd = args.password[0]
 
-    with open(scriptdir + 'test_result.csv', 'w', newline='') as csvfile:
+    with open(f'{scriptdir}test_result.csv', 'w', newline='') as csvfile:
         field_name = ['test name', 'test result']
         writer = csv.DictWriter(csvfile, fieldnames=field_name)
         writer.writeheader()

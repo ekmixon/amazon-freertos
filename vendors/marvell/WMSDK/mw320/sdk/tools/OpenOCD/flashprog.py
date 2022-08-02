@@ -26,8 +26,8 @@ class WrongArgs(Exception):
 
 # We define which as it may not be available on Windows
 def which(program):
-    if _platform == "win32" or _platform == "win64" or _platform == "cygwin":
-        program = program + '.exe'
+    if _platform in ["win32", "win64", "cygwin"]:
+        program = f'{program}.exe'
 
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -62,13 +62,15 @@ def get_openocd():
         sys.exit()
 
 def file_path(file_name):
-    if _platform == "win32" or _platform == "win64":
-        if len(which("cygpath")):
-            return subprocess.Popen(['cygpath', '-m', file_name], stdout = subprocess.PIPE).communicate()[0].strip()
-        else:
-            return file_name.replace('\\', '/')
-    elif _platform == "cygwin":
+    if (
+        _platform in ["win32", "win64"]
+        and len(which("cygpath"))
+        or _platform not in ["win32", "win64"]
+        and _platform == "cygwin"
+    ):
         return subprocess.Popen(['cygpath', '-m', file_name], stdout = subprocess.PIPE).communicate()[0].strip()
+    elif _platform in ["win32", "win64"] and not len(which("cygpath")):
+        return file_name.replace('\\', '/')
     else:
         return file_name
 
@@ -250,13 +252,11 @@ def reset_board():
 
 def get_comp_longopts(args, non_comp_longopts):
     comp_longopts = []
-    while args:
-        if args[0] == '--':
-            break
+    while args and args[0] != '--':
         if args[0][:2] == '--':
             possibilities = [o for o in non_comp_longopts if o.startswith(args[0][2:])]
             if not possibilities:
-                comp_longopts.append(args[0][2:] + '=')
+                comp_longopts.append(f'{args[0][2:]}=')
         args = args[1:]
     return comp_longopts
 

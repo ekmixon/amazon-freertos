@@ -67,9 +67,6 @@ if __name__ == "__main__":
     elif args.i:
         GPIO = 21
         # If platform gpio is push pull high, set RPi gpio as pull down, otherwise pull up.
-        if args.i[0] > 0:
-            button = Button(GPIO)
-        else:
-            button = Button(GPIO, pull_up=False)
+        button = Button(GPIO) if args.i[0] > 0 else Button(GPIO, pull_up=False)
         sleep(1)
         print(button.is_pressed)

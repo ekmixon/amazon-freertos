@@ -87,8 +87,7 @@ def myargs(argv):
                         help="Force reprovisioning",
                         required=False)
 
-    options = parser.parse_args(argv)
-    return options
+    return parser.parse_args(argv)
 
 
 def create_app_keys(overwrite=None):
@@ -99,7 +98,7 @@ def read_device_pub_key():
     # Read Device Key and save
     print('Reading public key from device')
     key=cytools.read_public_key(1, "jwk")
-    print("key: {}".format(key))
+    print(f"key: {key}")
     if not key:
         print('Error: Cannot read device public key.')
         return 1
@@ -109,10 +108,10 @@ def read_device_pub_key():
     with open(pub_key_json, 'w') as json_file:
         json.dump(key, json_file)
 
-    # Change from JWK to PEM
-    pub_key_pem = 'keys/device_pub_key.pem'
     if os.path.exists(pub_key_json) and os.stat(pub_key_json).st_size > 0:
         pem = PemKey(pub_key_json)
+        # Change from JWK to PEM
+        pub_key_pem = 'keys/device_pub_key.pem'
         pem.save(pub_key_pem, private_key=False)
     else:
         print('Failed to read device public key')
@@ -126,18 +125,9 @@ def generate_device_cert(dev_serial_num,
     ca_priv_key_path="certificates/rootCA.key",
     ca_cert_path="certificates/rootCA.pem"):
 
-    if True:
-        # read device public key from previously read from the device
-        dev_pub_key = crypto.load_publickey(crypto.FILETYPE_PEM,
-                                            open(dev_pub_key_path, 'r').read())
-    else:
-        # for development only, use public key from self generated private key
-        dev_priv_key = crypto.load_privatekey(crypto.FILETYPE_ASN1,
-                                              open("keys/device_priv_key.der",
-                                                   'rb').read())
-        dev_pub_key = crypto.load_publickey(crypto.FILETYPE_PEM,
-                          crypto.dump_publickey(crypto.FILETYPE_PEM,
-                                                dev_priv_key))
+    # read device public key from previously read from the device
+    dev_pub_key = crypto.load_publickey(crypto.FILETYPE_PEM,
+                                        open(dev_pub_key_path, 'r').read())
     ca_privatekey = crypto.load_privatekey(crypto.FILETYPE_PEM,
                                            open(ca_priv_key_path, 'r').read())
     ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM,
@@ -146,7 +136,7 @@ def generate_device_cert(dev_serial_num,
     # create cert signed by ca_cert
     cert = crypto.X509()
     cert.set_subject(ca_cert.get_subject())
-    cert.get_subject().CN = cytools.target_name.upper() + '-' + str(dev_serial_num)
+    cert.get_subject().CN = f'{cytools.target_name.upper()}-{str(dev_serial_num)}'
     cert.set_serial_number(int(dev_serial_num))
     cert.gmtime_adj_notBefore(0)
     cert.gmtime_adj_notAfter(10*365*24*60*60)
@@ -188,15 +178,15 @@ def exec_shell_command(cmd):
         raise Exception("Command must be in a non-empty list")
 
     output = []
-    print("Executing command: {}".format(' '.join(cmd)))
+    print(f"Executing command: {' '.join(cmd)}")
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT)
     for line in iter(p.stdout.readline, b''):
         output.append(line.decode('utf-8'))
-        print("{}".format(line.decode('utf-8')), end='')
+        print(f"{line.decode('utf-8')}", end='')
     p.stdout.close()
     ret = p.wait()
-    print("Command completed (ret={})".format(ret))
+    print(f"Command completed (ret={ret})")
     return ret, ''.join(output)
 
 
@@ -205,27 +195,30 @@ def main(argv):
     create_signing_keys = False
 
     options = myargs(argv)
-    print("options: {}\r\n".format(options))
+    print(f"options: {options}\r\n")
 
     if not options.policy_file:
         options.policy_file = 'policy_multi_CM0_CM4_jitp.json'
         options.policy_file = os.path.join('policy',
                                            options.policy_file)
-        answer = \
-            input('Policy file name was not provided, use default {}? (Y/n): '
-                   .format(options.policy_file))
-        if answer == 'N' or answer == 'n':
+        answer = input(
+            f'Policy file name was not provided, use default {options.policy_file}? (Y/n): '
+        )
+
+        if answer in ['N', 'n']:
             print("Please specify policy as a parameter: `-p <policy>`")
             exit(1)
     if not os.path.isfile(options.policy_file):
-        print("Policy file {} doesn't exit.".format(options.policy_file))
+        print(f"Policy file {options.policy_file} doesn't exit.")
         exit(1)
 
     if not options.device:
         options.device = "cys06xxa"
-        answer = input("\r\nDevice is not provided, use default {}? (Y/n): "
-                        .format(options.device))
-        if answer == 'N' or answer == 'n':
+        answer = input(
+            f"\r\nDevice is not provided, use default {options.device}? (Y/n): "
+        )
+
+        if answer in ['N', 'n']:
             print("Please specify device as a parameter: `-d <device>'")
             exit(1)
 
@@ -234,9 +227,10 @@ def main(argv):
     cytools = CySecureTools(options.device, options.policy_file)
 
     if not options.serial_number:
-        dev_serial_num = \
-            input("\r\nSelect unique device serial number for {} (digits only):\n"
-                                .format(cytools.target_name.upper()))
+        dev_serial_num = input(
+            f"\r\nSelect unique device serial number for {cytools.target_name.upper()} (digits only):\n"
+        )
+
         if not dev_serial_num.isnumeric():
             print('Error: device serial number not number')
             exit(1)
@@ -244,28 +238,24 @@ def main(argv):
         dev_serial_num = options.serial_number
 
     # signing keys
-    if not options.new_keys and not options.existing_keys:
+    if options.new_keys or options.existing_keys:
+        create_signing_keys = bool(options.new_keys)
+    else:
         answer = \
             input('\r\nDo you want to create a new set of keys (y/N): ')
-        if answer == 'Y' or answer == 'y':
+        if answer in ['Y', 'y']:
             print('Will create new keys.')
             create_signing_keys = True
         else:
             # TBD: check if the keys exist (open json, read keys)
             print('Will use existing keys.')
-    else:
-        if options.new_keys:
-            create_signing_keys = True
-        else:
-            create_signing_keys = False
-
     print("\r\n")
     print("##################################################################")
     print("Current configuration:")
-    print("Policy file:             {}".format(options.policy_file))
-    print("Device:                  {}".format(options.device))
-    print("Serial Number:           {}".format(dev_serial_num))
-    print("Create new signing keys: {}".format(create_signing_keys))
+    print(f"Policy file:             {options.policy_file}")
+    print(f"Device:                  {options.device}")
+    print(f"Serial Number:           {dev_serial_num}")
+    print(f"Create new signing keys: {create_signing_keys}")
     print("##################################################################")
     print("\r\n")
     print("!!! Make sure the board is in the DAPLink mode (Mode LED blinks at 2Hz) !!!")
@@ -277,7 +267,7 @@ def main(argv):
             print('Reprovision skipped.')
             exit(1)
 
-    if create_signing_keys == True:
+    if create_signing_keys:
         print('Creating new signing keys.')
         create_app_keys(overwrite=True)
 

@@ -35,8 +35,8 @@ class SecConfError(Exception):
 
 # We define which as it may not be available on Windows
 def which(program):
-    if _platform == "win32" or _platform == "win64" or _platform == "cygwin":
-        program = program + '.exe'
+    if _platform in ["win32", "win64", "cygwin"]:
+        program = f'{program}.exe'
 
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -56,20 +56,21 @@ def which(program):
 def get_openssl():
     global OPENSSL
     OPENSSL = which("openssl")
-    if not len(OPENSSL):
-        if _platform == "win32" or _platform == "win64":
-            OPENSSL = which(SCRIPT_DIR + "/GnuWin32/bin/openssl")
+    if not len(OPENSSL) and _platform in ["win32", "win64"]:
+        OPENSSL = which(f"{SCRIPT_DIR}/GnuWin32/bin/openssl")
     if not len(OPENSSL):
         raise SecConfError("Error: Please install openssl for your platform")
 
 def file_path(file_name):
-    if _platform == "win32" or _platform == "win64":
-        if len(which("cygpath")):
-            return subprocess.Popen(['cygpath', '-m', file_name], stdout = subprocess.PIPE).communicate()[0].strip()
-        else:
-            return file_name.replace('\\', '/')
-    elif _platform == "cygwin":
+    if (
+        _platform in ["win32", "win64"]
+        and len(which("cygpath"))
+        or _platform not in ["win32", "win64"]
+        and _platform == "cygwin"
+    ):
         return subprocess.Popen(['cygpath', '-m', file_name], stdout = subprocess.PIPE).communicate()[0].strip()
+    elif _platform in ["win32", "win64"] and not len(which("cygpath")):
+        return file_name.replace('\\', '/')
     else:
         return file_name
 
@@ -105,18 +106,18 @@ def write_conf_file(str):
 # arg: binary = 'boot2', 'mcufw'
 def check_sample_keys(binary):
     if binary in 'boot2':
-        prvkey = sample_keys_dir + '/' + boot2_prvkey
-        pubkey = sample_keys_dir + '/' + boot2_pubkey
+        prvkey = f'{sample_keys_dir}/{boot2_prvkey}'
+        pubkey = f'{sample_keys_dir}/{boot2_pubkey}'
     elif binary in 'mcufw':
-        prvkey = sample_keys_dir + '/' + mcufw_prvkey
-        pubkey = sample_keys_dir + '/' + mcufw_pubkey
+        prvkey = f'{sample_keys_dir}/{mcufw_prvkey}'
+        pubkey = f'{sample_keys_dir}/{mcufw_pubkey}'
     else:
         raise SecConfError("Error: Invalid check_sample_keys() argument")
 
     if os.path.isfile(prvkey) and os.path.isfile(pubkey):
         return
     else:
-        raise SecConfError("Error: Sample RSA keys for %s are not found" % binary)
+        raise SecConfError(f"Error: Sample RSA keys for {binary} are not found")
 
 # arg: binary = 'boot2', 'mcufw'
 def gen_rsa_keypair(binary):
@@ -392,14 +393,14 @@ def get_sec_conf_path(sboot_val):
     try:
         int(sboot_val)
         if sboot_val in supported_sec_confs:
-            return sec_conf_dir + '/' + sec_conf_pfx + sboot_val + sec_conf_sfx
+            return f'{sec_conf_dir}/{sec_conf_pfx}{sboot_val}{sec_conf_sfx}'
         else:
             sys.exit("Error: This security configuration is not supported.")
     except ValueError as e:
         if os.path.isfile(file_path(sboot_val)):
             return file_path(sboot_val)
         else:
-            sys.exit("Error: Security config file %s does not exist." % sboot_val)
+            sys.exit(f"Error: Security config file {sboot_val} does not exist.")
 
 def main():
     global sec_conf_file, sec_conf_dir, sample_keys_dir

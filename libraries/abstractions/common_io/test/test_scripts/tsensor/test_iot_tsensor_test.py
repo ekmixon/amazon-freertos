@@ -31,8 +31,8 @@ import argparse
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(scriptdir)
 if parentdir not in sys.path:
-    print("Script Dir: %s" % scriptdir)
-    print("Parent Dir: %s" % parentdir)
+    print(f"Script Dir: {scriptdir}")
+    print(f"Parent Dir: {parentdir}")
     sys.path.append(parentdir)
 from test_iot_test_template import test_template
 
@@ -63,10 +63,10 @@ class TestTsensorAssisted(test_template):
         temp_list = []
         ref_temp = 0
         sample_times = 5
-        for i in range(0, sample_times):
+        cmd = "iot_tests test 12 1"
+        for _ in range(sample_times):
             self._serial.reset_input_buffer()
 
-            cmd = "iot_tests test 12 1"
             self._serial.write('\r\n'.encode('utf-8'))
 
             self._serial.write(cmd.encode('utf-8'))
@@ -80,27 +80,26 @@ class TestTsensorAssisted(test_template):
             for x in res.split('\n'):
                 # Look for the line with ADC reading.
                 if x.find('TEST(TEST_IOT_TSENSOR, AFQP_IotTsensorTemp)') != -1:
-                    for s in x.split():
-                        if s.isdigit():
-                            temp.append(int(s))
-
+                    temp.extend(int(s) for s in x.split() if s.isdigit())
             temp_list.append(temp)
             # Wait serial to flush out.
             sleep(0.2)
 
             # Get reference temperature.
             self.run_shell_script(" ".join([self.shell_script, self._ip, self._login, self._pwd]))
-            fp = open(self.rpi_output_file)
-            line = fp.readline()
-            fp.close()
-
+            with open(self.rpi_output_file) as fp:
+                line = fp.readline()
             try:
                 ref_temp = ref_temp + float(line)
             except:
                 print("Failed to get ref temp")
                 return 'Fail'
 
-        avg_temp = [sum([_list[i] for _list in temp_list]) / len(temp_list) for i in range(len(temp_list[0]))]
+        avg_temp = [
+            sum(_list[i] for _list in temp_list) / len(temp_list)
+            for i in range(len(temp_list[0]))
+        ]
+
         ref_temp = ref_temp / sample_times
 
         if len(temp) == 0:
@@ -139,7 +138,7 @@ if __name__ == "__main__":
     rpi_login = args.login_name[0]
     rpi_pwd = args.password[0]
 
-    with open(scriptdir + '/test_result.csv', 'w', newline='') as csvfile:
+    with open(f'{scriptdir}/test_result.csv', 'w', newline='') as csvfile:
         field_name = ['test name', 'test result']
         writer = csv.DictWriter(csvfile, fieldnames=field_name)
         writer.writeheader()

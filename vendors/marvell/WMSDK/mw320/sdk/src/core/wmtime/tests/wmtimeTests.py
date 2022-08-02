@@ -33,7 +33,7 @@ class TestWMTIME(unittest.TestCase):
 
     #Run test for time set/get for normal time.
     def runTestSetGet(self, setVal, expectedSetVal, expectedGetVal):
-        mtfterm.sendline(("time-set " + setVal));
+        mtfterm.sendline(f"time-set {setVal}");
         line = mtfterm.readline();
         line = mtfterm.readline();
         if ((self.compareNormalTime (expectedSetVal, line)) == 0):  #if set is successful

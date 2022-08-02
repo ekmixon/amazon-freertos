@@ -47,7 +47,7 @@ def write_async(s):
     conn, addr = s.accept()
     # Read from UART until '\n' line ending is found
     rcv = serialport.read_until()
-    print(str(rcv))
+    print(rcv)
 
 
 def write_read_sync(s):
@@ -56,7 +56,7 @@ def write_read_sync(s):
     conn, addr = s.accept()
     # Read from UART until '\n' line ending is found
     rcv = serialport.read_until()
-    rcv_str = str(repr(rcv))
+    rcv_str = repr(rcv)
     print(rcv_str)
     # Echo message back to UART
     serialport.write(rcv)
@@ -69,15 +69,13 @@ def baud_change_test(s):
 
     # Notify host rpi is ready.
     conn, addr = s.accept()
-    for i in range(4):
+    for _ in range(4):
         # Read from UART until '\n' line ending is found
         rcv = serialport.read_until()
-        rcv_str = str(repr(rcv))
-        baudrate = baud_pattern.search(rcv_str)
-        # Last message from UART was to switch to a different baudrate
-        if baudrate:
+        rcv_str = repr(rcv)
+        if baudrate := baud_pattern.search(rcv_str):
             # switch RPI UART baudrate to baudrate indicated by DUT
-            serialport.baudrate = baudrate.group(1)
+            serialport.baudrate = baudrate[1]
         else:
             # If message was not signaling a new baudrate, the DUT sent a message with the intention of receiving an echo back
             serialport.write(rcv)

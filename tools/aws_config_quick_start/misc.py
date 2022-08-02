@@ -40,15 +40,14 @@ def create_policy_document():
 
 def format_credential_keys_text(credentialText):
     credentialTextLines = credentialText.split('\n')
-    formattedCredentialTextLines = []
+    formattedCredentialTextLines = [
+        '"' + credentialTextLine + '\\n"'
+        for credentialTextLine in credentialTextLines
+        if credentialTextLine.strip()
+    ]
 
-    for credentialTextLine in credentialTextLines:
-        if credentialTextLine.strip():
-            formattedCredentialTextLine = '"' + credentialTextLine + '\\n"'
-            formattedCredentialTextLines.append(formattedCredentialTextLine)
 
-    formattedCredentialText = '\\\n'.join(formattedCredentialTextLines)
-    return formattedCredentialText
+    return '\\\n'.join(formattedCredentialTextLines)
 
 def update_client_credentials(afr_source_dir, thing_name, wifi_ssid, wifi_passwd, wifi_security):
     file_to_modify = os.path.join(
@@ -63,9 +62,8 @@ def update_client_credentials(afr_source_dir, thing_name, wifi_ssid, wifi_passwd
         new_text = new_text.replace("<IOTThingName>", "\"" + thing_name + "\"")
         new_text = new_text.replace(
             "<IOTEndpoint>", "\"" + describe_endpoint() + "\"")
-        header_file = open(str(file_to_modify),'w')
-        header_file.write(new_text)
-        header_file.close()
+        with open(str(file_to_modify),'w') as header_file:
+            header_file.write(new_text)
     print("Updated aws_clientcredential.h")
 
 def update_client_credential_keys(afr_source_dir, client_certificate_pem, client_private_key_pem):
@@ -79,9 +77,8 @@ def update_client_credential_keys(afr_source_dir, client_certificate_pem, client
                 format_credential_keys_text(client_certificate_pem))
         new_text = new_text.replace("<ClientPrivateKeyPEM>",
                 format_credential_keys_text(client_private_key_pem))
-        header_file = open(str(file_to_modify),'w')
-        header_file.write(new_text)
-        header_file.close()
+        with open(str(file_to_modify),'w') as header_file:
+            header_file.write(new_text)
     print("Updated aws_clientcredential_keys.h")
 
 def cleanup_client_credential_file(afr_source_dir):
@@ -107,9 +104,8 @@ def cleanup_client_credential_file(afr_source_dir):
             "<IOTThingName>", "\"" + thing_name_string + "\"")
         new_text = new_text.replace(
             "<IOTEndpoint>", "\"" + endpoint_string + "\"")
-        header_file = open(str(client_credential_file),'w')
-        header_file.write(new_text)
-        header_file.close()
+        with open(str(client_credential_file),'w') as header_file:
+            header_file.write(new_text)
     print("Cleaned up aws_clientcredential.h")
 
 def cleanup_client_credential_keys_file(afr_source_dir):
@@ -126,7 +122,6 @@ def cleanup_client_credential_keys_file(afr_source_dir):
             "<ClientCertificatePEM>", "\"" + certificate_pem_string + "\"")
         new_text = new_text.replace(
             "<ClientPrivateKeyPEM>", "\"" + private_key_pem_string + "\"")
-        header_file = open(str(client_credential_keys_file),'w')
-        header_file.write(new_text)
-        header_file.close()
+        with open(str(client_credential_keys_file),'w') as header_file:
+            header_file.write(new_text)
     print("Cleaned up aws_clientcredential_keys.h")

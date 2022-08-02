@@ -34,9 +34,7 @@ if __name__ == "__main__":
 
     data = args.d & 0xFFF
 
-    if data > MAX_OUT:
-        data = MAX_OUT
-
+    data = min(data, MAX_OUT)
     # I2C channel 1 is connected to the GPIO pins
     channel = 1
 

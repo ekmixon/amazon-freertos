@@ -80,7 +80,7 @@ def generate_checksum_for_files(afr_path, list_of_files):
     """
     checksums = {}
     for file in list_of_files:
-        print("Generating checksum for {}...".format(file))
+        print(f"Generating checksum for {file}...")
         file_abs_path = os.path.join(afr_path, file)
         if not os.path.exists(file_abs_path):
             continue
@@ -129,11 +129,12 @@ def get_list_of_files(afr_path, search_path, include_portable):
             dirs[:] = [d for d in dirs if d not in ["portable"]]
 
         # Do not include hidden files and folders.
-        dirs[:] = [d for d in dirs if not d[0] == "."]
-        files = [f for f in files if not f[0] == "."]
+        dirs[:] = [d for d in dirs if d[0] != "."]
+        files = [f for f in files if f[0] != "."]
 
-        for f in files:
-            list_of_files.append(os.path.join(os.path.relpath(root, afr_path), f))
+        list_of_files.extend(
+            os.path.join(os.path.relpath(root, afr_path), f) for f in files
+        )
 
     return list_of_files
 
@@ -224,20 +225,21 @@ def generate_checksums_file_schema_v2(required_files, optional_components, afr_p
     output_file_path
         Path where to generate the checksum file.
     """
-    checksums = {}
-
     # Calculate checksums for all the required files.
     checksums_required_files = generate_checksum_for_files(afr_path, required_files)
-    checksums["required_files"] = checksums_required_files
+    checksums = {
+        "required_files": checksums_required_files,
+        "optional_components": [],
+    }
 
-    # Calculate checksums for all the optional components.
-    checksums["optional_components"] = []
     for optional_component_location in optional_components:
-        optional_component_checksum = {}
-        optional_component_checksum["location"] = optional_component_location
-        optional_component_checksum["checksums"] = generate_checksum_for_files(
-            afr_path, optional_components[optional_component_location]
-        )
+        optional_component_checksum = {
+            "location": optional_component_location,
+            "checksums": generate_checksum_for_files(
+                afr_path, optional_components[optional_component_location]
+            ),
+        }
+
         checksums["optional_components"].append(optional_component_checksum)
 
     # Write calculated checksums to JSON.
@@ -283,10 +285,7 @@ def generate_checksums_file_schema_v3(
     output_file_path
         Path where to generate the checksum file.
     """
-    checksums = {}
-    checksums["exhaustive"] = {}
-    checksums["minimal"] = {}
-
+    checksums = {"exhaustive": {}, "minimal": {}}
     # Calculate checksums for exhaustive required files.
     checksums_exhaustive_required_files = generate_checksum_for_files(afr_path, exhaustive_required_files)
     checksums["exhaustive"]["required_files"] = checksums_exhaustive_required_files
@@ -294,11 +293,14 @@ def generate_checksums_file_schema_v3(
     # Calculate checksums for exhaustive optional components.
     checksums["exhaustive"]["optional_components"] = []
     for optional_component_location in exhaustive_optional_components:
-        optional_component_checksum = {}
-        optional_component_checksum["location"] = optional_component_location
-        optional_component_checksum["checksums"] = generate_checksum_for_files(
-            afr_path, exhaustive_optional_components[optional_component_location]
-        )
+        optional_component_checksum = {
+            "location": optional_component_location,
+            "checksums": generate_checksum_for_files(
+                afr_path,
+                exhaustive_optional_components[optional_component_location],
+            ),
+        }
+
         checksums["exhaustive"]["optional_components"].append(optional_component_checksum)
 
     # Calculate checksums for minimal required files.
@@ -345,9 +347,9 @@ def main():
     output_file_name = args["out"]
     output_file_path = os.path.join(afr_path, output_file_name)
 
-    print("AFR Code: {}".format(afr_path))
-    print("Output File: {}".format(output_file_path))
-    print("Schema Version: {}".format(schema_version))
+    print(f"AFR Code: {afr_path}")
+    print(f"Output File: {output_file_path}")
+    print(f"Schema Version: {schema_version}")
 
     # Get all the required files for which we need to generate checksum.
     all_required_files = []
@@ -398,7 +400,7 @@ def main():
 
         optional_component_location = optional_component_location.replace("\\", "/")
         all_optional_components[optional_component_location] = files_in_optional_component
-        if len(files_in_exhaustive_optional_component) > 0:
+        if files_in_exhaustive_optional_component:
             exhaustive_optional_components[optional_component_location] = files_in_exhaustive_optional_component
 
     if schema_version == 1:
@@ -420,7 +422,7 @@ def main():
     else:
         raise ValueError("Incorrect schema version number!!")
 
-    print("Generated {}.".format(output_file_path))
+    print(f"Generated {output_file_path}.")
 
 
 if __name__ == "__main__":

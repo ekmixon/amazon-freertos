@@ -27,13 +27,13 @@ import dbus
 import sys
 
 SERVICE_NAME = "org.bluez"
-ADAPTER_INTERFACE = SERVICE_NAME + ".Adapter1"
-DEVICE_INTERFACE = SERVICE_NAME + ".Device1"
-SERVICE_INTERFACE = SERVICE_NAME + ".GattService1"
-CHARACTERISTIC_INTERFACE = SERVICE_NAME + ".GattCharacteristic1"
-DESCRIPTOR_INTERFACE = SERVICE_NAME + ".GattDescriptor1"
-AGENT_INTERFACE = SERVICE_NAME + ".Agent1"
-AGENT_MANAGER_INTERFACE = SERVICE_NAME + ".AgentManager1"
+ADAPTER_INTERFACE = f"{SERVICE_NAME}.Adapter1"
+DEVICE_INTERFACE = f"{SERVICE_NAME}.Device1"
+SERVICE_INTERFACE = f"{SERVICE_NAME}.GattService1"
+CHARACTERISTIC_INTERFACE = f"{SERVICE_NAME}.GattCharacteristic1"
+DESCRIPTOR_INTERFACE = f"{SERVICE_NAME}.GattDescriptor1"
+AGENT_INTERFACE = f"{SERVICE_NAME}.Agent1"
+AGENT_MANAGER_INTERFACE = f"{SERVICE_NAME}.AgentManager1"
 
 ENABLE_TC_AFQP_ADD_INCLUDED_SERVICE = 0
 
@@ -137,16 +137,19 @@ def find_gatt_service_in_objects(services, characteristics, descriptors, bEnable
         if ifaces.get(SERVICE_INTERFACE) is not None:
             uuid = str(objInterface.Get(SERVICE_INTERFACE, "UUID"))
             primary = objInterface.Get(SERVICE_INTERFACE, "Primary")
-            if bEnableIncludedService == True and ENABLE_TC_AFQP_ADD_INCLUDED_SERVICE == 1:
-                if uuid == "8a7f1168-48af-4efb-83b5-e679f9320001":
-                    included_service = objInterface.Get(SERVICE_INTERFACE, "Includes")
-                    services[uuid]["Includes"] = included_service
-                    print("Included service: " + str(included_service))
+            if (
+                bEnableIncludedService == True
+                and ENABLE_TC_AFQP_ADD_INCLUDED_SERVICE == 1
+                and uuid == "8a7f1168-48af-4efb-83b5-e679f9320001"
+            ):
+                included_service = objInterface.Get(SERVICE_INTERFACE, "Includes")
+                services[uuid]["Includes"] = included_service
+                print(f"Included service: {str(included_service)}")
 
             services[uuid] = {}
             services[uuid]["obj"] = obj
             services[uuid]["Primary"] = primary
-            print("Service: "+uuid)
+            print(f"Service: {uuid}")
 
         if ifaces.get(CHARACTERISTIC_INTERFACE) is not None:
             uuid = str(objInterface.Get(CHARACTERISTIC_INTERFACE, "UUID"))
@@ -158,7 +161,7 @@ def find_gatt_service_in_objects(services, characteristics, descriptors, bEnable
             characteristics[uuid] = {}
             characteristics[uuid]["obj"] = obj
             characteristics[uuid]["Flags"] = flags
-            print("Char: "+uuid)
+            print(f"Char: {uuid}")
 
         if ifaces.get(DESCRIPTOR_INTERFACE) is not None:
             uuid = str(objInterface.Get(DESCRIPTOR_INTERFACE, "UUID"))
@@ -167,7 +170,7 @@ def find_gatt_service_in_objects(services, characteristics, descriptors, bEnable
             descriptors[uuid] = {}
             descriptors[uuid]["obj"] = obj
             #descriptors[uuid]["Flags"] = flags
-            print("Dscr: "+uuid)
+            print(f"Dscr: {uuid}")
 
         sys.stdout.flush()
 
@@ -175,5 +178,4 @@ def find_gatt_service_in_objects(services, characteristics, descriptors, bEnable
 
 
 def convert_dbus_array_to_string(dbusArray):
-    string = ''.join([chr(byte) for byte in dbusArray])
-    return string
+    return ''.join([chr(byte) for byte in dbusArray])

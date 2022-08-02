@@ -30,16 +30,19 @@ def info(iface='hid', device='ecc', **kwargs):
     ATCA_SUCCESS = 0x00
 
     # Get the target default config
-    cfg = eval('cfg_at{}a_{}_default()'.format(atca_names_map.get(device), atca_names_map.get(iface)))
+    cfg = eval(
+        f'cfg_at{atca_names_map.get(device)}a_{atca_names_map.get(iface)}_default()'
+    )
+
 
     # Set interface parameters
     if kwargs is not None:
         for k, v in kwargs.items():
-            icfg = getattr(cfg.cfg, 'atca{}'.format(iface))
+            icfg = getattr(cfg.cfg, f'atca{iface}')
             setattr(icfg, k, int(v, 16))
 
     # Basic Raspberry Pi I2C check
-    if 'i2c' == iface and check_if_rpi():
+    if iface == 'i2c' and check_if_rpi():
         cfg.cfg.atcai2c.bus = 1
 
     # Initialize the stack
@@ -50,7 +53,7 @@ def info(iface='hid', device='ecc', **kwargs):
     info = bytearray(4)
     assert atcab_info(info) == ATCA_SUCCESS
     print('\nDevice Part:')
-    print('    ' + get_device_name(info))
+    print(f'    {get_device_name(info)}')
 
     # Request the Serial Number
     serial_number = bytearray(9)
@@ -71,11 +74,11 @@ def info(iface='hid', device='ecc', **kwargs):
     is_locked = AtcaReference(False)
     assert atcab_is_locked(0, is_locked) == ATCA_SUCCESS
     config_zone_locked = bool(is_locked.value)
-    print('    Config Zone is %s' % ('locked' if config_zone_locked else 'unlocked'))
+    print(f"    Config Zone is {'locked' if config_zone_locked else 'unlocked'}")
 
     assert atcab_is_locked(1, is_locked) == ATCA_SUCCESS
     data_zone_locked = bool(is_locked.value)
-    print('    Data Zone is %s' % ('locked' if data_zone_locked else 'unlocked'))
+    print(f"    Data Zone is {'locked' if data_zone_locked else 'unlocked'}")
 
     # Load the public key
     if data_zone_locked:

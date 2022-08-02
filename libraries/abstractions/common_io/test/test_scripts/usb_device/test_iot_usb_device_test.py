@@ -36,8 +36,8 @@ import random
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(scriptdir)
 if parentdir not in sys.path:
-    print("Script Dir: %s" % scriptdir)
-    print("Parent Dir: %s" % parentdir)
+    print(f"Script Dir: {scriptdir}")
+    print(f"Parent Dir: {parentdir}")
     sys.path.append(parentdir)
 from test_iot_test_template import test_template
 
@@ -137,11 +137,14 @@ class TestUSBDeviceAssisted(test_template):
 
         assert res.find('Ignored ') is not -1
 
-        dut_bytes = []
-        for x in re.sub('\r', '', res).split('\n'):
-            if x.find('IGNORE') != -1:
-                dut_bytes = [int(s, 16) for s in x.split(',') if len(s) == 2]
-                break
+        dut_bytes = next(
+            (
+                [int(s, 16) for s in x.split(',') if len(s) == 2]
+                for x in re.sub('\r', '', res).split('\n')
+                if x.find('IGNORE') != -1
+            ),
+            [],
+        )
 
         if self.compare_host_dut_result(self.host_bytes, dut_bytes) == -1:
             print(repr(res))
@@ -169,7 +172,7 @@ class TestUSBDeviceAssisted(test_template):
         Host write thread.
         :return:
         """
-        self.host_bytes = [random.randrange(0, 128) for i in range(0, 16)]
+        self.host_bytes = [random.randrange(0, 128) for _ in range(16)]
         self.epo.write(self.host_bytes, 10000)
         # print(self.w_bytes)
 
@@ -203,10 +206,7 @@ class TestUSBDeviceAssisted(test_template):
         self.dev = usb.core.find(idVendor=self.vid, idProduct=self.pid)
         # print(self.dev)
 
-        if self.dev is None:
-            return "Pass"
-
-        return "Fail"
+        return "Pass" if self.dev is None else "Fail"
 
 
 # unit test
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     rpi_login = args.login_name[0]
     rpi_pwd = args.password[0]
 
-    with open(scriptdir + '/test_result.csv', 'w', newline='') as csvfile:
+    with open(f'{scriptdir}/test_result.csv', 'w', newline='') as csvfile:
         field_name = ['test name', 'test result']
         writer = csv.DictWriter(csvfile, fieldnames=field_name)
         writer.writeheader()

@@ -34,8 +34,8 @@ import re
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(scriptdir)
 if parentdir not in sys.path:
-    print("Script Dir: %s" % scriptdir)
-    print("Parent Dir: %s" % parentdir)
+    print(f"Script Dir: {scriptdir}")
+    print(f"Parent Dir: {parentdir}")
     sys.path.append(parentdir)
 from test_iot_test_template import test_template
 
@@ -83,11 +83,10 @@ class TestGpioAssisted(test_template):
         # Set RPi gpio to pull down. So the test will pass only if platform side is high.
         self.run_shell_script(" ".join([self.shell_script, self._ip, self._login, self._pwd, '-w', '0']))
 
-        fp = open(self.rpi_output_file)
-        line = fp.readline()
-        line = line.strip()
+        with open(self.rpi_output_file) as fp:
+            line = fp.readline()
+            line = line.strip()
 
-        fp.close()
         self.clean()
 
         return 'Pass' if line == rpi_button_read else 'Fail'
@@ -111,11 +110,10 @@ class TestGpioAssisted(test_template):
         # Set RPi gpio to pull up. So the test will pass only if platform side is low.
         self.run_shell_script(" ".join([self.shell_script, self._ip, self._login, self._pwd, '-w', '1']))
 
-        fp = open(self.rpi_output_file)
-        line = fp.readline()
-        line = line.strip()
+        with open(self.rpi_output_file) as fp:
+            line = fp.readline()
+            line = line.strip()
 
-        fp.close()
         self.clean()
 
         return 'Pass' if line == rpi_button_read else 'Fail'
@@ -141,11 +139,10 @@ class TestGpioAssisted(test_template):
         # Set RPi gpio to pull up as open drain pull up resistor.
         self.run_shell_script(" ".join([self.shell_script, self._ip, self._login, self._pwd, '-w', '1']))
 
-        fp = open(self.rpi_output_file)
-        line = fp.readline()
-        line = line.strip()
+        with open(self.rpi_output_file) as fp:
+            line = fp.readline()
+            line = line.strip()
 
-        fp.close()
         self.clean()
 
         return 'Pass' if line == rpi_button_read else 'Fail'
@@ -169,11 +166,10 @@ class TestGpioAssisted(test_template):
         # Set RPi gpio to pull up as open drain pull up resistor.
         self.run_shell_script(" ".join([self.shell_script, self._ip, self._login, self._pwd, '-w', '1']))
 
-        fp = open(self.rpi_output_file)
-        line = fp.readline()
-        line = line.strip()
+        with open(self.rpi_output_file) as fp:
+            line = fp.readline()
+            line = line.strip()
 
-        fp.close()
         self.clean()
 
         return 'Pass' if line == rpi_button_read else 'Fail'
@@ -218,9 +214,8 @@ class TestGpioAssisted(test_template):
 
         if res.find('PASS\n') != -1:
             return 'Pass'
-        else:
-            print(repr(res))
-            return 'Fail'
+        print(repr(res))
+        return 'Fail'
 
     def test_AssistedIotGpioModeReadFalse(self):
         """
@@ -261,9 +256,8 @@ class TestGpioAssisted(test_template):
         res = re.sub(r'\r', '', res)
         if res.find('PASS\n') != -1:
             return 'Pass'
-        else:
-            print(repr(res))
-            return 'Fail'
+        print(repr(res))
+        return 'Fail'
 
 
 # unit test
@@ -287,7 +281,7 @@ if __name__ == "__main__":
     rpi_login = args.login_name[0]
     rpi_pwd = args.password[0]
 
-    with open(scriptdir + '/test_result.csv', 'w', newline='') as csvfile:
+    with open(f'{scriptdir}/test_result.csv', 'w', newline='') as csvfile:
         field_name = ['test name', 'test result']
         writer = csv.DictWriter(csvfile, fieldnames=field_name)
         writer.writeheader()

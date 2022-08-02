@@ -14,13 +14,13 @@ def main(): # pragma: no cover
     with open(commit_file_name, 'rb') as src, open(rejected_file_name, 'wb') as dst:
         while True:
             buffer_size = 2**20
-            copy_buffer = src.read(buffer_size)
-            if not copy_buffer:
+            if copy_buffer := src.read(buffer_size):
+                dst.write(copy_buffer)
+            else:
                 break
-            dst.write(copy_buffer)
-    print("Commit message saved in {}".format(rejected_file_name))
+    print(f"Commit message saved in {rejected_file_name}")
     print("Fix the commit and try again with:")
-    print("git commit -F {}".format(rejected_file_name))
+    print(f"git commit -F {rejected_file_name}")
     print("Aborting Commit.")
     sys.exit(1)
 
@@ -36,13 +36,12 @@ def CommitFileIsValid(commit_file_name):
 
         label = LabelFromSubject(subject_line)
         if not LabelIsValid(label):
-            print("Label for subject ({}) is not valid  See .gitmessage.".format(
-                label))
+            print(f"Label for subject ({label}) is not valid  See .gitmessage.")
             return False
 
         blank_line = commit_file.readline()
         if not LineIsBlank(blank_line):
-            print("'{}'".format(blank_line))
+            print(f"'{blank_line}'")
             print("Separate the subject from the body with a blank line.  "
                   + "See .gitmessage.")
             return False
@@ -50,9 +49,15 @@ def CommitFileIsValid(commit_file_name):
         for line in commit_file:
             if not LineLengthIsValid(line):
                 print(
-                    "'{}'".format(line) +
-                    "Lines in body text should be 72 characters or less.  "
-                    + "See .gitmessage")
+                    (
+                        (
+                            f"'{line}'"
+                            + "Lines in body text should be 72 characters or less.  "
+                        )
+                        + "See .gitmessage"
+                    )
+                )
+
                 return False
     return True
 
@@ -65,13 +70,11 @@ def SubjectIsValid(subject):
     if SubjectIsMerge(subject):
         return True
 
-    if not SubjectHasLabel(subject):
-        return False
-
-    if not SubjectLengthIsValid(subject):
-        return False
-
-    return True
+    return (
+        bool(SubjectLengthIsValid(subject))
+        if SubjectHasLabel(subject)
+        else False
+    )
 
 
 def SubjectIsBlank(subject):
@@ -82,12 +85,12 @@ def SubjectIsBlank(subject):
 
 
 def SubjectIsMerge(subject):
-    if (
-        subject.startswith('Merge pull') or
-        subject.startswith('Merge branch')
-    ):
-        return True
-    return False
+    return bool(
+        (
+            subject.startswith('Merge pull')
+            or subject.startswith('Merge branch')
+        )
+    )
 
 
 def SubjectHasLabel(subject):
@@ -102,7 +105,7 @@ def SubjectLengthIsValid(subject):
     soft_limit = 50
     hard_limit = soft_limit + 10
     if len(subject) > hard_limit:
-        print("Subject line must be less than {} characters.".format(soft_limit))
+        print(f"Subject line must be less than {soft_limit} characters.")
         return False
     return True
 
@@ -122,39 +125,36 @@ def LabelFromSubject(subject):
 
 
 def LabelIsValid(label):
-    valid_labels = set([
-        'chore',     # updating grunt tasks etc; no production code change
-        'docs',      # changes to documentation, comments.  No logic change
-        'feat',      # New feature
-        'fix',       # Bug fix, or other change related to tracked issue
-        'merge',     # Merge of one branch into another, no other change
-        'refactor',  # refactoring production code
-        'revert',    # Revert of a previous commit, no other change
-        'style',     # formatting, missing semi colons, etc; no code change
-        'test',      # adding or refactoring tests; no production code change
-        'tool',      # adding or refactoring tools; no production code change
-    ])
+    valid_labels = {
+        'chore',
+        'docs',
+        'feat',
+        'fix',
+        'merge',
+        'refactor',
+        'revert',
+        'style',
+        'test',
+        'tool',
+    }
+
     return label.lower() in valid_labels
 
 
 def LineIsBlank(text_line):
     if text_line.startswith('#'):
         return True
-    stripped_text = text_line.strip()
-    if stripped_text:
-        return False
-    return True
+    return not (stripped_text := text_line.strip())
 
 
 def LineLengthIsValid(text_line):
     if LineIsBlank(text_line):
         return True
     stripped_text = text_line.strip()
-    soft_limit = 72
     hard_limit = 80
     if len(stripped_text) > hard_limit:
-        print("{}:Text line must be less than {} characters.".format(
-            stripped_text, soft_limit))
+        soft_limit = 72
+        print(f"{stripped_text}:Text line must be less than {soft_limit} characters.")
         return False
     return True
 
